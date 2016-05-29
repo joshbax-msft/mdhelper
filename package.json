@@ -17,7 +17,8 @@
         "onCommand:extension.tolower",
         "onCommand:extension.tounorderedlist",
         "onCommand:extension.toorderedlist",
-        "onCommand:extension.tolink"
+        "onCommand:extension.tolink",
+        "onCommand:extension.toimagelink"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -28,16 +29,18 @@
             { "command": "extension.tolower", "title": "Markdown: ToLower" },
             { "command": "extension.tounorderedlist", "title": "Markdown: Convert to unordered list" },
             { "command": "extension.toorderedlist", "title": "Markdown: Convert to ordered list" },
-            { "command": "extension.tolink", "title": "Markdown: Convert to link" }
+            { "command": "extension.tolink", "title": "Markdown: Convert to link" },
+            { "command": "extension.toimagelink", "title": "Markdown: Convert to image link" }
         ],
         "keybindings": [
             { "command": "extension.bold", "key": "ctrl+b", "when": "editorTextFocus" },
             { "command": "extension.italicize", "key": "ctrl+i", "when": "editorTextFocus" },
             { "command": "extension.toupper", "key": "ctrl+shift+u", "when": "editorTextFocus" },
             { "command": "extension.tolower", "key": "ctrl+shift+l", "when": "editorTextFocus" },
-            { "command": "extension.tounorderedlist", "key": "ctrl+u", "when": "editorTextFocus" },
-            { "command": "extension.toorderedlist", "key": "ctrl+o", "when": "editorTextFocus" },
-            { "command": "extension.tolink", "key": "ctrl+l", "when": "editorTextFocus" }
+            { "command": "extension.tounorderedlist", "key": "ctrl+l ctrl+u", "when": "editorTextFocus" },
+            { "command": "extension.toorderedlist", "key": "ctrl+l ctrl+o", "when": "editorTextFocus" },
+            { "command": "extension.tolink", "key": "alt+l", "when": "editorTextFocus" },
+            { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" }
         ]
     },
     "scripts": {
