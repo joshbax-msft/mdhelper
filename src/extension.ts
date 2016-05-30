@@ -3,6 +3,11 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 
+let global_expression_initial_whitespace: RegExp = new RegExp("^\\s*");
+let global_expression_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
+let global_expression_ordered_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s)(.*)(\\r{0,1})");
+let global_expression_unordered_list_line: RegExp = new RegExp("^(\\s*?)(-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -17,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
         let s: vscode.Selection[] = e.selections;
         e.edit(function (edit) {
             for(let x = 0; x < s.length; x++) {
-                ToggleBold(d, edit, s[x]);  
+                ToggleBold(d, edit, s[x]);
             }
         });
     });
@@ -170,22 +175,19 @@ export function deactivate() {
 function ConvertToUnorderedList(txtTrimmed: string)
 {
     let txtTrimmedLines: string[] = txtTrimmed.split("\n");
-    let expression_initial_whitespace: RegExp = new RegExp("^\\s*");
-    let expression_list_line: RegExp = new RegExp("^([\\s]*?)([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)");
-    
     for(let i = 0; i < txtTrimmedLines.length; i++)
     {
-        let matches: RegExpMatchArray = txtTrimmedLines[i].match(expression_list_line);
+        let matches: RegExpMatchArray = txtTrimmedLines[i].match(global_expression_list_line);
         if (matches == null)
         {
             // not already a list item; insert a dash and space before the first non-whitespace character
-            matches = txtTrimmedLines[i].match(expression_initial_whitespace);
+            matches = txtTrimmedLines[i].match(global_expression_initial_whitespace);
             txtTrimmedLines[i] = txtTrimmedLines[i].substr(0, matches[0].length) + "- " + txtTrimmedLines[i].substr(matches[0].length);
         }
         else
         {
             // already a list item; convert initial character(s) to dash for consistency
-            txtTrimmedLines[i] = txtTrimmedLines[i].replace(expression_list_line, "$1- $3");
+            txtTrimmedLines[i] = txtTrimmedLines[i].replace(global_expression_list_line, "$1- $3");
         }
     }
     
@@ -203,36 +205,35 @@ function ConvertToOrderedList(txtTrimmed: string, startingIndex: number = 0)
 // assumes list bullets are "-", as done by ConvertToUnorderedList
 function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: number)
 {
-    let expression: RegExp = new RegExp("^(\\s*)-(.*)");
     let currentIndex: number = startingIndex;
     let currentIndent: number;
     let currentOrderNumber: number = 1;
     let itemsProcessed: number = 0;
 
     // process first line
-    let matches: RegExpMatchArray = txtTrimmedLines[currentIndex].match(expression); 
+    let matches: RegExpMatchArray = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line); 
     currentIndent = matches[1].length;
     
-    txtTrimmedLines[currentIndex] = txtTrimmedLines[currentIndex].replace(expression, "$1" + currentOrderNumber.toString() + ".$2");
+    txtTrimmedLines[currentIndex] = txtTrimmedLines[currentIndex].replace(global_expression_unordered_list_line, "$1" + currentOrderNumber.toString() + ". $3$4");
     currentIndex++;
     currentOrderNumber++;
     itemsProcessed++;
     
     if(currentIndex < txtTrimmedLines.length)
     {
-        matches = txtTrimmedLines[currentIndex].match(expression);
+        matches = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line);
         while(matches[1].length >= currentIndent && currentIndex < txtTrimmedLines.length)
         {
             if(matches[1].length == currentIndent)
             {
                 // sibling
-                txtTrimmedLines[currentIndex] = txtTrimmedLines[currentIndex].replace(expression, "$1" + currentOrderNumber.toString() + ".$2");
+                txtTrimmedLines[currentIndex] = txtTrimmedLines[currentIndex].replace(global_expression_unordered_list_line, "$1" + currentOrderNumber.toString() + ". $3$4");
                 currentIndex++;
                 currentOrderNumber++;
                 itemsProcessed++;
                 if(currentIndex < txtTrimmedLines.length)
                 {
-                    matches = txtTrimmedLines[currentIndex].match(expression);
+                    matches = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line);
                 }
             }
             else
@@ -243,7 +244,7 @@ function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: numbe
                 itemsProcessed += subitemsProcessed;
                 if(currentIndex < txtTrimmedLines.length)
                 {
-                    matches = txtTrimmedLines[currentIndex].match(expression);
+                    matches = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line);
                 }
             }
         }
@@ -260,7 +261,7 @@ function ToggleBold(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.
     let txtTrimmed: string = txt.trim();
     let txtReplace: string;
     if(IsList(txtTrimmed)) { 
-        txtReplace = ToggleBoldList(txtTrimmed); 
+        txtReplace = txt.replace(txtTrimmed, ToggleBoldList(txtTrimmed)); 
     }
     else if(IsBold(txtTrimmed) || IsItalicizedAndBold(txtTrimmed)) { 
         txtReplace = txt.replace(txtTrimmed, RemoveBold(txtTrimmed)); 
@@ -274,12 +275,11 @@ function ToggleBold(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.
 }
 
 function ToggleBoldList(txtList: string) {
-    let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     if(IsBoldList(txtList)) {
         // remove bold from each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + RemoveBold(matches[3]) + matches[4];
         }
         return txtLines.join("\n");
@@ -288,7 +288,7 @@ function ToggleBoldList(txtList: string) {
         // add bold to each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches = txtLines[i].match(expression);
+            let matches = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + AddBold(ConvertItalics(matches[3])) + matches[4];
         }
         return txtLines.join("\n");
@@ -304,7 +304,7 @@ function ToggleItalics(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vsco
     let txtReplace: string;
 
     if(IsList(txtTrimmed)) {
-        txtReplace = ToggleItalicsList(txtTrimmed);
+        txtReplace = txt.replace(txtTrimmed, ToggleItalicsList(txtTrimmed));
     }
     else if(IsItalicized(txtTrimmed) || IsBoldAndItalicized(txtTrimmed)) {
         txtReplace = txt.replace(txtTrimmed, RemoveItalics(txtTrimmed));
@@ -318,12 +318,11 @@ function ToggleItalics(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vsco
 }
 
 function ToggleItalicsList(txtList: string) {
-    let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     if(IsItalicizedList(txtList)) {
         // remove italics from each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + RemoveItalics(matches[3]) + matches[4];
         }
         return txtLines.join("\n");
@@ -332,7 +331,7 @@ function ToggleItalicsList(txtList: string) {
         // add italics to each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + AddItalics(ConvertBold(matches[3])) + matches[4];
         }
         return txtLines.join("\n");
@@ -347,7 +346,7 @@ function ToggleStrikethrough(d: vscode.TextDocument, e: vscode.TextEditorEdit, s
     let txtTrimmed: string = txt.trim();
     let txtReplace: string;
     if(IsList(txtTrimmed)) { 
-        txtReplace = ToggleStrikethroughList(txtTrimmed); 
+        txtReplace = txt.replace(txtTrimmed, ToggleStrikethroughList(txtTrimmed)); 
     }
     else if(IsStrikethrough(txtTrimmed)) { 
         txtReplace = txt.replace(txtTrimmed, RemoveStrikethrough(txtTrimmed)); 
@@ -361,12 +360,11 @@ function ToggleStrikethrough(d: vscode.TextDocument, e: vscode.TextEditorEdit, s
 }
 
 function ToggleStrikethroughList(txtList: string) {
-    let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     if(IsStrikethroughList(txtList)) {
         // remove strikethrough from each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + RemoveStrikethrough(matches[3]) + matches[4];
         }
         return txtLines.join("\n");
@@ -375,7 +373,7 @@ function ToggleStrikethroughList(txtList: string) {
         // add strikethrough to each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches = txtLines[i].match(expression);
+            let matches = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + AddStrikethrough(RemoveStrikethrough(matches[3])) + matches[4];
         }
         return txtLines.join("\n");
@@ -392,7 +390,7 @@ function ToggleCodeInline(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
 
     if(!IsCodeBlock(txtTrimmed)) {
         if(IsList(txtTrimmed)) {
-            txtReplace = ToggleCodeInlineList(txtTrimmed);
+            txtReplace = txt.replace(txtTrimmed, ToggleCodeInlineList(txtTrimmed));
         }
         else if(IsCodeInline(txtTrimmed)) {
             txtReplace = txt.replace(txtTrimmed, RemoveCodeInline(txtTrimmed));
@@ -406,12 +404,11 @@ function ToggleCodeInline(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
 }
 
 function ToggleCodeInlineList(txtList: string) {
-    let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     if(IsCodeInlineList(txtList)) {
         // remove code inline from each line
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + RemoveCodeInline(matches[3]) + matches[4];
         }
         return txtLines.join("\n");
@@ -420,7 +417,7 @@ function ToggleCodeInlineList(txtList: string) {
         // wrap each line in `
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
-            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
             txtLines[i] = matches[1] + matches[2] + AddCodeInline(TrimSingles(matches[3], "`")) + matches[4];
         }
         return txtLines.join("\n");
@@ -501,44 +498,40 @@ function RemoveStrikethrough(txt: string) {
 function IsBold(txt: string) { return (txt.startsWith("**") && txt.endsWith("**")) || (txt.startsWith("__") && txt.endsWith("__")); }
 function IsBoldList(txtList: string) {
     // assumes txtList is a valid list
-    let expression: RegExp = new RegExp("^[\\s]*?([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
-        let matches: RegExpMatchArray = txtLine.match(expression);
-        let txtAfterBullet: string = matches[2];
+        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
+        let txtAfterBullet: string = matches[3];
         if(!(IsBold(txtAfterBullet) || IsItalicizedAndBold(txtAfterBullet))) { return false; }
     }
     return true;
 }
 function IsItalicizedList(txtList: string) {
     // assumes txtList is a valid list
-    let expression: RegExp = new RegExp("^[\\s]*?([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
-        let matches: RegExpMatchArray = txtLine.match(expression);
-        let txtAfterBullet: string = matches[2];
+        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
+        let txtAfterBullet: string = matches[3];
         if(!(IsItalicized(txtAfterBullet) || IsBoldAndItalicized(txtAfterBullet))) { return false; }
     }
     return true;
 }
 function IsCodeInlineList(txtList: string) {
     // assumes txtList is a valid list
-    let expression: RegExp = new RegExp("^[\\s]*?([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
-        let matches: RegExpMatchArray = txtLine.match(expression);
-        let txtAfterBullet: string = matches[2];
+        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
+        let txtAfterBullet: string = matches[3];
         if(!IsCodeInline(txtAfterBullet)) { return false; }
     }
     return true;
 }
 function IsStrikethroughList(txtList: string) {
     // assumes txtList is a valid list
-    let expression: RegExp = new RegExp("^[\\s]*?([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
-        let matches: RegExpMatchArray = txtLine.match(expression);
-        let txtAfterBullet: string = matches[2];
+        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
+        let txtAfterBullet: string = matches[3];
         if(!IsStrikethrough(txtAfterBullet)) { return false; }
     }
     return true;
@@ -559,28 +552,25 @@ function ContainsImageLink(txt: string) {
 }
 function IsList(txt: string)
 {
-    let expression: RegExp = new RegExp("^\\s*?([0-9]\\.\\s|-\\s|\\*\\s|\\+\\s).*");
     let txtLines: string[] = txt.split("\n");
     for(let i = 0; i < txtLines.length; i++) {
-        let matches: RegExpMatchArray = txtLines[i].match(expression);
+        let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
         if (matches == null) { return false; }
     }    
     return true;
 }
 function IsUnorderedList(txt: string) {
-    let expression: RegExp = new RegExp("^\\s*?[-|\\*|\\+]\\s.*");
     let txtLines: string[] = txt.split("\n");
     for(let i = 0; i < txtLines.length; i++) {
-        let matches: RegExpMatchArray = txtLines[i].match(expression);
+        let matches: RegExpMatchArray = txtLines[i].match(global_expression_unordered_list_line);
         if (matches == null) { return false; }
     }    
     return true;
 }
 function IsOrderedList(txt: string) {
-    let expression: RegExp = new RegExp("^\\s*?[0-9]\\.\\s.*");
     let txtLines: string[] = txt.split("\n");
     for(let i = 0; i < txtLines.length; i++) {
-        let matches: RegExpMatchArray = txtLines[i].match(expression);
+        let matches: RegExpMatchArray = txtLines[i].match(global_expression_ordered_list_line);
         if (matches == null) { return false; }
     }    
     return true;
