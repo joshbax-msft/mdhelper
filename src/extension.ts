@@ -7,6 +7,9 @@ let global_expression_initial_whitespace: RegExp = new RegExp("^\\s*");
 let global_expression_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
 let global_expression_ordered_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s)(.*)(\\r{0,1})");
 let global_expression_unordered_list_line: RegExp = new RegExp("^(\\s*?)(-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
+let global_expression_link: RegExp = new RegExp("\\[.*?\\]\\(.*?\\)");
+let global_expression_image = new RegExp("!\\[.*?\\]\\(.*?\\)");
+let global_expression_code_block_line: RegExp = new RegExp("^```.*");
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -459,11 +462,10 @@ function RemoveCodeBlock(txt: string) {
     else { return txt; }
 }
 function StripCodeBlocks(txt: string) {
-    let expression: RegExp = new RegExp("^```.*");
     let txtReturn: string = "";
     let txtLines: string[] = txt.split("\n");
     for(let txtLine of txtLines) {
-        if(txtLine.match(expression) == null) {
+        if(txtLine.match(global_expression_code_block_line) == null) {
             txtReturn += txtLine;
             if(txtLine.endsWith("\r")) { txtReturn += "\n"; }
         }
@@ -541,13 +543,11 @@ function IsItalicized(txt: string) { return ((txt.startsWith("_") && txt.endsWit
 function IsItalicizedAndBold(txt: string) { return (txt.startsWith("_**") && txt.endsWith("**_")) || (txt.startsWith("*__") && txt.endsWith("__*")); }
 function IsBoldAndItalicized(txt: string) { return (txt.startsWith("**_") && txt.endsWith("_**")) || (txt.startsWith("__*") && txt.endsWith("*__")); }
 function ContainsLink(txt: string) {
-    let expression: RegExp = new RegExp("\\[.*?\\]\\(.*?\\)");
-    let match: RegExpExecArray = expression.exec(txt);
+    let match: RegExpExecArray = global_expression_link.exec(txt);
     return (match != null);
 }
 function ContainsImageLink(txt: string) {
-    let expression = new RegExp("!\\[.*?\\]\\(.*?\\)");
-    let match: RegExpExecArray = expression.exec(txt);
+    let match: RegExpExecArray = global_expression_image.exec(txt);
     return (match != null);
 }
 function IsList(txt: string)
