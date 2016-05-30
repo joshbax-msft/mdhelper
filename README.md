@@ -4,8 +4,10 @@ Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown form
 
 | Formatting                | Keyboard Shortcut |
 |---------------------------|-------------------|
-| Bold                      | Ctrl+B            |
-| Italics                   | Ctrl+I            |
+| Toggle bold               | Ctrl+B            |
+| Toggle italics            | Ctrl+I            |
+| Toggle code inline        | Ctrl+`            |
+| Toggle code block         | Ctrl+Shift+`      |
 | ToUpper                   | Ctrl+Shift+U      |
 | ToLower                   | Ctrl+Shift+L      |
 | Convert to unordered list | Ctrl+U            |
@@ -13,7 +15,9 @@ Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown form
 | Convert to empty link     | Ctrl+L            | 
 
 ## Notes
-- bold/italics shortcuts serve as toggles
-- supports aggregation of bold/italics formatting within a selection
-- supports toggle of a bolded and italicized selection (e.g toggling bold on \_\*\*example\*\*\_ retains the italics; similar functionality for \*\*\_example\_\*\*) 
+- acts on current word when nothing is selected
+- supports aggregation of bold/italics within a selection
+- supports bold/italics combination formatting (e.g toggling bold on \_\*\*example\*\*\_ preserves the italics; similar functionality for \*\*\_example\_\*\*) 
+- supports toggling of list items when a list is selected
+- formatting is often overwritten during toggles (bold favors \*\*; italics favor \_)
 - converting to list strips any pre-existing list formatting 
