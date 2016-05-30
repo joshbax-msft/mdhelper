@@ -17,7 +17,7 @@ Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown form
 
 ## Notes
 - acts on current word when nothing is selected
-- supports aggregation of bold/italics within a selection
+- aggregates formatting within a selection
 - supports bold/italics combination formatting (e.g toggling bold on \_\*\*example\*\*\_ preserves the italics; similar functionality for \*\*\_example\_\*\*) 
 - supports toggling of list items when a list is selected
 - formatting is often overwritten during toggles (bold favors \*\*; italics favor \_)
