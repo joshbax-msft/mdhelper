@@ -33,6 +33,17 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
+    let disposable_togglestrikethrough = vscode.commands.registerCommand('extension.togglestrikethrough', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) {
+            for(let x = 0; x < s.length; x++) {
+                ToggleStrikethrough(d, edit, s[x]);  
+            }
+        });
+    });
+
     let disposable_togglecodeinline = vscode.commands.registerCommand('extension.togglecodeinline', () => {
         let e: vscode.TextEditor = vscode.window.activeTextEditor;
         let d: vscode.TextDocument = e.document;
@@ -141,6 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
     
     context.subscriptions.push(disposable_togglebold);
     context.subscriptions.push(disposable_toggleitalics);
+    context.subscriptions.push(disposable_togglestrikethrough);
     context.subscriptions.push(disposable_togglecodeinline);
     context.subscriptions.push(disposable_togglecodeblock);
     context.subscriptions.push(disposable_toupper);
@@ -328,6 +340,50 @@ function ToggleItalicsList(txtList: string) {
     }
 }
 
+function ToggleStrikethrough(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }
+    if(s.isEmpty) { s = SelectWord(d, s); }
+    
+    let txt: string = d.getText(new vscode.Range(s.start, s.end));
+    let txtTrimmed: string = txt.trim();
+    let txtReplace: string;
+    if(IsList(txtTrimmed)) { 
+        txtReplace = ToggleStrikethroughList(txtTrimmed); 
+    }
+    else if(IsStrikethrough(txtTrimmed)) { 
+        txtReplace = txt.replace(txtTrimmed, RemoveStrikethrough(txtTrimmed)); 
+    }
+    else {
+        let txtStripped: string = txtTrimmed.split("~~").join("");
+        txtReplace = txt.replace(txtTrimmed, AddStrikethrough(txtStripped));                   
+    }
+                    
+    e.replace(s, txtReplace); 
+}
+
+function ToggleStrikethroughList(txtList: string) {
+    if(IsStrikethroughList(txtList)) {
+        // remove strikethrough from each line
+        let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s)(.*)(\\r{0,1})");
+        let txtLines: string[] = txtList.split("\n");
+        for(let i = 0; i < txtLines.length; i++) {
+            let matches: RegExpMatchArray = txtLines[i].match(expression);
+            txtLines[i] = matches[1] + matches[2] + RemoveStrikethrough(matches[3]) + matches[4];
+        }
+        return txtLines.join("\n");
+    }
+    else {
+        // add strikethrough to each line
+        let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s)(.*)(\\r{0,1})");
+        let txtLines: string[] = txtList.split("\n");
+        for(let i = 0; i < txtLines.length; i++) {
+            let matches = txtLines[i].match(expression);
+            txtLines[i] = matches[1] + matches[2] + AddStrikethrough(RemoveStrikethrough(matches[3])) + matches[4];
+        }
+        return txtLines.join("\n");
+    }
+}
+
 function ToggleCodeInline(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }
     if(s.isEmpty) { s = SelectWord(d, s); }
@@ -353,7 +409,7 @@ function ToggleCodeInline(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
 
 function ToggleCodeInlineList(txtList: string) {
     if(IsCodeInlineList(txtList)) {
-        // remove bold from each line
+        // remove code inline from each line
         let expression: RegExp = new RegExp("^(\\s*?)([0-9]\\.\\s|-\\s|\\*\\s)(.*)(\\r{0,1})");
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
@@ -438,6 +494,13 @@ function RemoveItalics(txt: string) {
     else if(IsBoldAndItalicized(txt)) { return AddBold(txt.substring(3, txt.length - 3)); }
     else { return txt; } 
 }
+function IsStrikethrough(txt: string) { return txt.startsWith("~~") && txt.endsWith("~~"); }
+function AddStrikethrough(txt: string) { return "~~" + txt + "~~"; }
+function RemoveStrikethrough(txt: string) { 
+    if(IsStrikethrough(txt)) { return txt.substring(2, txt.length - 2); }
+    else { return txt; } 
+}
+
 function IsBold(txt: string) { return (txt.startsWith("**") && txt.endsWith("**")) || (txt.startsWith("__") && txt.endsWith("__")); }
 function IsBoldList(txtList: string) {
     // assumes txtList is a valid list
@@ -469,6 +532,17 @@ function IsCodeInlineList(txtList: string) {
         let matches: RegExpMatchArray = txtLine.match(expression);
         let txtAfterBullet: string = matches[2];
         if(!IsCodeInline(txtAfterBullet)) { return false; }
+    }
+    return true;
+}
+function IsStrikethroughList(txtList: string) {
+    // assumes txtList is a valid list
+    let expression: RegExp = new RegExp("^[\\s]*?([0-9]\\.\\s|-\\s|\\*\\s)(.*)(\\r{0,1})");
+    let txtLines: string[] = txtList.split("\n");
+    for(let txtLine of txtLines) {
+        let matches: RegExpMatchArray = txtLine.match(expression);
+        let txtAfterBullet: string = matches[2];
+        if(!IsStrikethrough(txtAfterBullet)) { return false; }
     }
     return true;
 }

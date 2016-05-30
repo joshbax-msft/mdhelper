@@ -2,7 +2,7 @@
     "name": "mdhelper",
     "displayName": "mdhelper",
     "description": "mdhelper",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.0.0"
@@ -13,6 +13,7 @@
     "activationEvents": [
         "onCommand:extension.togglebold",
         "onCommand:extension.toggleitalics",
+        "onCommand:extension.togglestrikethrough",
         "onCommand:extension.togglecodeinline",
         "onCommand:extension.togglecodeblock",
         "onCommand:extension.toupper",
@@ -27,6 +28,7 @@
         "commands": [
             { "command": "extension.togglebold", "title": "Markdown: Toggle bold" },
             { "command": "extension.toggleitalics", "title": "Markdown: Toggle italics" },
+            { "command": "extension.togglestrikethrough", "title": "Markdown: Toggle strikethrough" },
             { "command": "extension.togglecodeinline", "title": "Markdown: Toggle code inline" },
             { "command": "extension.togglecodeblock", "title": "Markdown: Toggle code block" },
             { "command": "extension.toupper", "title": "Markdown: ToUpper" },
@@ -39,6 +41,7 @@
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
             { "command": "extension.toggleitalics", "key": "ctrl+i", "when": "editorTextFocus" },
+            { "command": "extension.togglestrikethrough", "key": "alt+s", "when": "editorTextFocus" },
             { "command": "extension.togglecodeinline", "key": "ctrl+`", "when": "editorTextFocus" },
             { "command": "extension.togglecodeblock", "key": "ctrl+shift+`", "when": "editorTextFocus" },
             { "command": "extension.toupper", "key": "ctrl+shift+u", "when": "editorTextFocus" },
