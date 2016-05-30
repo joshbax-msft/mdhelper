@@ -11,8 +11,10 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.bold",
-        "onCommand:extension.italicize",
+        "onCommand:extension.togglebold",
+        "onCommand:extension.toggleitalics",
+        "onCommand:extension.togglecodeinline",
+        "onCommand:extension.togglecodeblock",
         "onCommand:extension.toupper",
         "onCommand:extension.tolower",
         "onCommand:extension.tounorderedlist",
@@ -23,8 +25,10 @@
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
-            { "command": "extension.bold", "title": "Markdown: Bold" },
-            { "command": "extension.italicize", "title": "Markdown: Italicize" },
+            { "command": "extension.togglebold", "title": "Markdown: Toggle bold" },
+            { "command": "extension.toggleitalics", "title": "Markdown: Toggle italics" },
+            { "command": "extension.togglecodeinline", "title": "Markdown: Toggle code inline" },
+            { "command": "extension.togglecodeblock", "title": "Markdown: Toggle code block" },
             { "command": "extension.toupper", "title": "Markdown: ToUpper" },
             { "command": "extension.tolower", "title": "Markdown: ToLower" },
             { "command": "extension.tounorderedlist", "title": "Markdown: Convert to unordered list" },
@@ -33,8 +37,10 @@
             { "command": "extension.toimagelink", "title": "Markdown: Convert to image link" }
         ],
         "keybindings": [
-            { "command": "extension.bold", "key": "ctrl+b", "when": "editorTextFocus" },
-            { "command": "extension.italicize", "key": "ctrl+i", "when": "editorTextFocus" },
+            { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
+            { "command": "extension.toggleitalics", "key": "ctrl+i", "when": "editorTextFocus" },
+            { "command": "extension.togglecodeinline", "key": "ctrl+`", "when": "editorTextFocus" },
+            { "command": "extension.togglecodeblock", "key": "ctrl+shift+`", "when": "editorTextFocus" },
             { "command": "extension.toupper", "key": "ctrl+shift+u", "when": "editorTextFocus" },
             { "command": "extension.tolower", "key": "ctrl+shift+l", "when": "editorTextFocus" },
             { "command": "extension.tounorderedlist", "key": "ctrl+l ctrl+u", "when": "editorTextFocus" },
