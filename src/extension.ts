@@ -9,7 +9,7 @@ let global_expression_ordered_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\
 let global_expression_unordered_list_line: RegExp = new RegExp("^(\\s*?)(-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
 let global_expression_link: RegExp = new RegExp("\\[.*?\\]\\(.*?\\)");
 let global_expression_image = new RegExp("!\\[.*?\\]\\(.*?\\)");
-let global_expression_code_block_line: RegExp = new RegExp("^```.*");
+let global_expression_code_block_line: RegExp = new RegExp("^[```|~~~].*");
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -154,6 +154,17 @@ export function activate(context: vscode.ExtensionContext) {
                     let txtReplace: string = "![" + txt + "](path/to/image.png)";
                     edit.replace(s[x], txtReplace);
                 }
+            }
+        });
+    });
+    
+    let disposable_toblockquote = vscode.commands.registerCommand('extension.toblockquote', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) {
+            for(let x = 0; x < s.length; x++) {
+                // ToggleCodeBlock(d, edit, s[x]);  
             }
         });
     });
@@ -451,6 +462,10 @@ function ToggleCodeBlock(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vs
 
 // helpers
 function IsCodeBlock(txt: string) { return txt.startsWith("```\r\n") && txt.endsWith("\r\n```"); }
+function ConvertCodeBlock(txt: string) {
+    if(IsCodeBlock(txt)) { return AddCodeBlock(RemoveCodeBlock(txt)); }
+    else { return txt; }
+}
 function AddCodeBlock(txt: string) { return "```\r\n" + txt + "\r\n```"; }
 function RemoveCodeBlock(txt: string) {
     if(IsCodeBlock(txt)) {

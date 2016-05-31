@@ -2,7 +2,7 @@
     "name": "mdhelper",
     "displayName": "mdhelper",
     "description": "mdhelper",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.0.0"
@@ -21,7 +21,8 @@
         "onCommand:extension.tounorderedlist",
         "onCommand:extension.toorderedlist",
         "onCommand:extension.tolink",
-        "onCommand:extension.toimagelink"
+        "onCommand:extension.toimagelink",
+        "onCommand:extension.toblockquote"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -36,7 +37,8 @@
             { "command": "extension.tounorderedlist", "title": "Markdown: Convert to unordered list" },
             { "command": "extension.toorderedlist", "title": "Markdown: Convert to ordered list" },
             { "command": "extension.tolink", "title": "Markdown: Convert to link" },
-            { "command": "extension.toimagelink", "title": "Markdown: Convert to image link" }
+            { "command": "extension.toimagelink", "title": "Markdown: Convert to image link" },
+            { "command": "extension.toblockquote", "title": "Markdown: Convert to blockquote" }
         ],
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
@@ -49,7 +51,8 @@
             { "command": "extension.tounorderedlist", "key": "ctrl+l ctrl+u", "when": "editorTextFocus" },
             { "command": "extension.toorderedlist", "key": "ctrl+l ctrl+o", "when": "editorTextFocus" },
             { "command": "extension.tolink", "key": "alt+l", "when": "editorTextFocus" },
-            { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" }
+            { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" },
+            { "command": "extension.toblockquote", "key": "ctrl+q", "when": "editorTextFocus" }
         ]
     },
     "scripts": {
