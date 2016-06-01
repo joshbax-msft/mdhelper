@@ -22,7 +22,8 @@
         "onCommand:extension.toorderedlist",
         "onCommand:extension.tolink",
         "onCommand:extension.toimagelink",
-        "onCommand:extension.toblockquote"
+        "onCommand:extension.toggleblockquote",
+        "onCommand:extension.debugpeek"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -38,7 +39,7 @@
             { "command": "extension.toorderedlist", "title": "Markdown: Convert to ordered list" },
             { "command": "extension.tolink", "title": "Markdown: Convert to link" },
             { "command": "extension.toimagelink", "title": "Markdown: Convert to image link" },
-            { "command": "extension.toblockquote", "title": "Markdown: Convert to blockquote" }
+            { "command": "extension.toggleblockquote", "title": "Markdown: Toggle blockquote" }
         ],
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
@@ -52,7 +53,8 @@
             { "command": "extension.toorderedlist", "key": "ctrl+l ctrl+o", "when": "editorTextFocus" },
             { "command": "extension.tolink", "key": "alt+l", "when": "editorTextFocus" },
             { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" },
-            { "command": "extension.toblockquote", "key": "ctrl+q", "when": "editorTextFocus" }
+            { "command": "extension.toggleblockquote", "key": "ctrl+q", "when": "editorTextFocus" },
+            { "command": "extension.debugpeek", "key": "ctrl+p", "when": "editorTextFocus" }
         ]
     },
     "scripts": {

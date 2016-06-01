@@ -4,12 +4,13 @@
 import * as vscode from 'vscode';
 
 let global_expression_initial_whitespace: RegExp = new RegExp("^\\s*");
-let global_expression_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s|-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
+let global_expression_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s|-\\s|\\*\\s|\\+\\s)(\\s*)([^\\s]?.*)(\\r?)");
 let global_expression_ordered_list_line: RegExp = new RegExp("^(\\s*?)([0-9]*?\\.\\s)(.*)(\\r{0,1})");
 let global_expression_unordered_list_line: RegExp = new RegExp("^(\\s*?)(-\\s|\\*\\s|\\+\\s)(.*)(\\r{0,1})");
 let global_expression_link: RegExp = new RegExp("\\[.*?\\]\\(.*?\\)");
 let global_expression_image = new RegExp("!\\[.*?\\]\\(.*?\\)");
 let global_expression_code_block_line: RegExp = new RegExp("^[```|~~~].*");
+let global_expression_blockquote: RegExp = new RegExp("^(>\\s)+");
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -18,6 +19,14 @@ export function activate(context: vscode.ExtensionContext) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "mdhelper" is now active!');
+    
+    let disposable_debugpeek = vscode.commands.registerCommand('extension.debugpeek', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection = e.selection;
+        e.edit(function (edit) { Peek(d, s, 5); });
+    });
+
 
     let disposable_togglebold = vscode.commands.registerCommand('extension.togglebold', () => {
         let e: vscode.TextEditor = vscode.window.activeTextEditor;
@@ -158,17 +167,18 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
     
-    let disposable_toblockquote = vscode.commands.registerCommand('extension.toblockquote', () => {
+    let disposable_toggleblockquote = vscode.commands.registerCommand('extension.toggleblockquote', () => {
         let e: vscode.TextEditor = vscode.window.activeTextEditor;
         let d: vscode.TextDocument = e.document;
         let s: vscode.Selection[] = e.selections;
         e.edit(function (edit) {
             for(let x = 0; x < s.length; x++) {
-                // ToggleCodeBlock(d, edit, s[x]);  
+                ToggleBlockquote(d, edit, s[x]);  
             }
         });
     });
     
+    context.subscriptions.push(disposable_debugpeek);
     context.subscriptions.push(disposable_togglebold);
     context.subscriptions.push(disposable_toggleitalics);
     context.subscriptions.push(disposable_togglestrikethrough);
@@ -201,7 +211,7 @@ function ConvertToUnorderedList(txtTrimmed: string)
         else
         {
             // already a list item; convert initial character(s) to dash for consistency
-            txtTrimmedLines[i] = txtTrimmedLines[i].replace(global_expression_list_line, "$1- $3");
+            txtTrimmedLines[i] = txtTrimmedLines[i].replace(global_expression_list_line, "$1- $3$4$5");
         }
     }
     
@@ -216,7 +226,7 @@ function ConvertToOrderedList(txtTrimmed: string, startingIndex: number = 0)
 }
 
 // returns the total number of processed items; used recursively to increment list processing position
-// assumes list bullets are "-", as done by ConvertToUnorderedList
+// assumes list bullets are "-", as returned by ConvertToUnorderedList
 function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: number)
 {
     let currentIndex: number = startingIndex;
@@ -267,6 +277,21 @@ function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: numbe
     return itemsProcessed;
 }
 
+function ToggleBlockquote(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }
+    if(s.isEmpty) { s = SelectWord(d, s); }
+    
+    let txt: string = d.getText(new vscode.Range(s.start, s.end));
+    let txtTrimmed: string = txt.trim();
+    let txtReplace: string;
+    
+    // if(IsList(txtTrimmed)) { txtReplace = txt.replace(txtTrimmed, ToggleBlockquoteList(txtTrimmed)); }
+    // else if(IsBlockquote(txtTrimmed)) { txtReplace = txt.replace(txtTrimmed, RemoveBlockquote(txtTrimmed)); }
+    // else { txtReplace = txt.replace(txtTrimmed, AddBlockquote(txtTrimmed)); }
+    
+    e.replace(s, txtReplace);
+}
+
 function ToggleBold(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }
     if(s.isEmpty) { s = SelectWord(d, s); }
@@ -274,6 +299,7 @@ function ToggleBold(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.
     let txt: string = d.getText(new vscode.Range(s.start, s.end));
     let txtTrimmed: string = txt.trim();
     let txtReplace: string;
+    
     if(IsList(txtTrimmed)) { 
         txtReplace = txt.replace(txtTrimmed, ToggleBoldList(txtTrimmed)); 
     }
@@ -294,7 +320,7 @@ function ToggleBoldList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + RemoveBold(matches[3]) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + RemoveBold(matches[4]) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -303,7 +329,7 @@ function ToggleBoldList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + AddBold(ConvertItalics(matches[3])) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + AddBold(ConvertItalics(matches[4])) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -337,7 +363,7 @@ function ToggleItalicsList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + RemoveItalics(matches[3]) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + RemoveItalics(matches[4]) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -346,7 +372,7 @@ function ToggleItalicsList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + AddItalics(ConvertBold(matches[3])) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + AddItalics(ConvertBold(matches[4])) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -379,7 +405,7 @@ function ToggleStrikethroughList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + RemoveStrikethrough(matches[3]) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + RemoveStrikethrough(matches[4]) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -388,7 +414,7 @@ function ToggleStrikethroughList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + AddStrikethrough(RemoveStrikethrough(matches[3])) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + AddStrikethrough(RemoveStrikethrough(matches[4])) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -423,7 +449,7 @@ function ToggleCodeInlineList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + RemoveCodeInline(matches[3]) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + RemoveCodeInline(matches[4]) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -432,7 +458,7 @@ function ToggleCodeInlineList(txtList: string) {
         let txtLines: string[] = txtList.split("\n");
         for(let i = 0; i < txtLines.length; i++) {
             let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
-            txtLines[i] = matches[1] + matches[2] + AddCodeInline(TrimSingles(matches[3], "`")) + matches[4];
+            txtLines[i] = matches[1] + matches[2] + matches[3] + AddCodeInline(TrimSingles(matches[4], "`")) + matches[5];
         }
         return txtLines.join("\n");
     }
@@ -518,7 +544,7 @@ function IsBoldList(txtList: string) {
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
         let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
-        let txtAfterBullet: string = matches[3];
+        let txtAfterBullet: string = matches[4];
         if(!(IsBold(txtAfterBullet) || IsItalicizedAndBold(txtAfterBullet))) { return false; }
     }
     return true;
@@ -528,7 +554,7 @@ function IsItalicizedList(txtList: string) {
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
         let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
-        let txtAfterBullet: string = matches[3];
+        let txtAfterBullet: string = matches[4];
         if(!(IsItalicized(txtAfterBullet) || IsBoldAndItalicized(txtAfterBullet))) { return false; }
     }
     return true;
@@ -538,7 +564,7 @@ function IsCodeInlineList(txtList: string) {
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
         let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
-        let txtAfterBullet: string = matches[3];
+        let txtAfterBullet: string = matches[4];
         if(!IsCodeInline(txtAfterBullet)) { return false; }
     }
     return true;
@@ -548,7 +574,7 @@ function IsStrikethroughList(txtList: string) {
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
         let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
-        let txtAfterBullet: string = matches[3];
+        let txtAfterBullet: string = matches[4];
         if(!IsStrikethrough(txtAfterBullet)) { return false; }
     }
     return true;
@@ -565,8 +591,51 @@ function ContainsImageLink(txt: string) {
     let match: RegExpExecArray = global_expression_image.exec(txt);
     return (match != null);
 }
-function IsList(txt: string)
-{
+function IsBlockquote(txt: string) {
+    let txtLines: string[] = txt.split("\n");
+    for(let i = 0; i < txtLines.length; i++) {
+        let matches: RegExpMatchArray = txtLines[i].match(global_expression_blockquote);
+        if (matches == null) { return false; }
+    }    
+    return true;
+}
+// returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
+function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
+    if(n <= 0) { return; }
+    else if(n > 0) {
+        // look ahead
+        let nCurrentLineIndex: number = s.end.line;
+        let txtReturn: string = "";
+        let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
+        
+        if(s.end.character + n > txtCurrentLine.length) {
+            while(txtReturn.length < n && ++nCurrentLineIndex < d.lineCount - 1) {
+                txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
+                let nNeededCharacters: number = n - txtReturn.length;
+                if(txtCurrentLine.length < nNeededCharacters) {
+                    txtReturn += txtCurrentLine;
+                }
+                else {
+                    txtReturn += txtCurrentLine.substring(0, nNeededCharacters);
+                }
+            }
+        }
+        else {
+            txtReturn = txtCurrentLine.substring(s.end.character, s.end.character + n); 
+        }
+        
+        vscode.window.showInformationMessage("Peek " + n.toString() + ": " + txtReturn);
+        return txtReturn;        
+    }
+}
+function IsPartialList(txt: string, d: vscode.TextDocument, s: vscode.Selection) {
+    // partial list is a selection that is a list with an adjacent line that is also a list [item]
+    if(!IsList(txt)) { return false; }
+    if(s.start.line > 0 && IsList(d.lineAt(s.start.line - 1).text)) { return true; }
+    if(s.end.line < d.lineCount - 1 && IsList(d.lineAt(s.end.line + 1).text)) { return true; }
+    return false;
+}
+function IsList(txt: string) {
     let txtLines: string[] = txt.split("\n");
     for(let i = 0; i < txtLines.length; i++) {
         let matches: RegExpMatchArray = txtLines[i].match(global_expression_list_line);
