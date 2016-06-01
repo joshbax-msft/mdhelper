@@ -474,13 +474,13 @@ function ToggleCodeBlock(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vs
 
     if(IsCodeBlock(txtTrimmed)) {
         txtReplace = txt.replace(txtTrimmed, RemoveCodeBlock(txtTrimmed));
-        if(txtReplace.endsWith("\r\n")) {
+        if(txtReplace.endsWith("\r\n") || Peek(d, s, 2) == "\r\n") {
             txtReplace = txtReplace.substring(0, txtReplace.length - 2);
         }
     }
     else {
         txtReplace = txt.replace(txtTrimmed, AddCodeBlock(TrimSingles(StripCodeBlocks(txtTrimmed), "`")));
-        if(!txt.endsWith("\r\n")) { txtReplace += "\r\n"; }
+        if(!txt.endsWith("\r\n") && Peek(d, s, 2) != "\r\n") { txtReplace += "\r\n"; }
     }
                     
     e.replace(s, txtReplace); 
@@ -498,7 +498,7 @@ function RemoveCodeBlock(txt: string) {
         let txtStrippedFirstLine: string = txt.substring(txt.indexOf("\n") + 1);
         let txtLines: string[] = txtStrippedFirstLine.split("\n");
         txtLines.pop();
-        return txtLines.join("\n");
+        return txtLines.join("\n") + "\n";
     }
     else { return txt; }
 }
@@ -600,6 +600,7 @@ function IsBlockquote(txt: string) {
     return true;
 }
 // returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
+// includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
 function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
     if(n <= 0) { return; }
     else if(n > 0) {
@@ -609,22 +610,26 @@ function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
         let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
         
         if(s.end.character + n > txtCurrentLine.length) {
+            // add the rest of the current line to txtReturn
+            txtReturn += txtCurrentLine.substring(s.end.character);
+            txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
             while(txtReturn.length < n && ++nCurrentLineIndex < d.lineCount - 1) {
                 txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
                 let nNeededCharacters: number = n - txtReturn.length;
                 if(txtCurrentLine.length < nNeededCharacters) {
                     txtReturn += txtCurrentLine;
+                    txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
+                    
                 }
                 else {
                     txtReturn += txtCurrentLine.substring(0, nNeededCharacters);
                 }
             }
         }
-        else {
+        else {            
             txtReturn = txtCurrentLine.substring(s.end.character, s.end.character + n); 
         }
         
-        vscode.window.showInformationMessage("Peek " + n.toString() + ": " + txtReturn);
         return txtReturn;        
     }
 }
@@ -694,7 +699,7 @@ function ConvertItalics(txt: string) {
 }
 function SelectWord(d: vscode.TextDocument, s: vscode.Selection) {
     let txtLine: string = d.lineAt(s.active.line).text;
-    let spacePreceding: number = txtLine.lastIndexOf(' ', s.start.character);
+    let spacePreceding: number = txtLine.lastIndexOf(' ', s.start.character - 1);
     let spaceFollowing: number = txtLine.indexOf(' ', s.start.character);
     if(spaceFollowing == -1) { spaceFollowing = txtLine.length; }
     return new vscode.Selection(new vscode.Position(s.active.line, spacePreceding + 1), new vscode.Position(s.active.line, spaceFollowing));
