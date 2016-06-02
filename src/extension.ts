@@ -279,15 +279,25 @@ function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: numbe
 
 function ToggleBlockquote(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }
-    if(s.isEmpty) { s = SelectWord(d, s); }
+    s = SelectLines(d, s);
     
     let txt: string = d.getText(new vscode.Range(s.start, s.end));
     let txtTrimmed: string = txt.trim();
     let txtReplace: string;
     
-    // if(IsList(txtTrimmed)) { txtReplace = txt.replace(txtTrimmed, ToggleBlockquoteList(txtTrimmed)); }
-    // else if(IsBlockquote(txtTrimmed)) { txtReplace = txt.replace(txtTrimmed, RemoveBlockquote(txtTrimmed)); }
-    // else { txtReplace = txt.replace(txtTrimmed, AddBlockquote(txtTrimmed)); }
+    // if(IsPartialList(txtTrimmed, d, s)) { 
+    //     txtReplace = txt.replace(txtTrimmed, ToggleBlockquoteList(txtTrimmed)); 
+    // }
+    // else if(IsList(txtTrimmed)) {
+        
+    // }
+    // else 
+    if(IsBlockquote(txtTrimmed)) { 
+        txtReplace = txt.replace(txtTrimmed, RemoveBlockquote(txtTrimmed)); 
+    }
+    else { 
+        txtReplace = txt.replace(txtTrimmed, AddBlockquote(txtTrimmed)); 
+    }
     
     e.replace(s, txtReplace);
 }
@@ -599,6 +609,25 @@ function IsBlockquote(txt: string) {
     }    
     return true;
 }
+// assumes whole lines are selected (to append spaces, if needed)
+function AddBlockquote(txt: string) {
+    let txtLines: string[] = txt.split("\n");
+    for(let i = 0; i < txtLines.length; i++) {
+        txtLines[i] = "> " + txtLines[i];
+        if(!txtLines[i].endsWith("  \r")) {
+            if(!txtLines[i].endsWith(" \r")) { txtLines[i] = txtLines[i].replace("\r", "  \r"); }
+            else { txtLines[i] = txtLines[i].replace("\r", " \r"); }            
+        }
+    }    
+    return txtLines.join("\n");
+}
+function RemoveBlockquote(txt: string) {
+    let txtLines: string[] = txt.split("\n");
+    for(let i = 0; i < txtLines.length; i++) {
+        txtLines[i] = txtLines[i].substring(2);
+    }    
+    return txtLines.join("\n");
+}
 // returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
 // includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
 function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
@@ -703,4 +732,8 @@ function SelectWord(d: vscode.TextDocument, s: vscode.Selection) {
     let spaceFollowing: number = txtLine.indexOf(' ', s.start.character);
     if(spaceFollowing == -1) { spaceFollowing = txtLine.length; }
     return new vscode.Selection(new vscode.Position(s.active.line, spacePreceding + 1), new vscode.Position(s.active.line, spaceFollowing));
+}
+function SelectLines(d: vscode.TextDocument, s: vscode.Selection) {
+    let nLastLineLength: number = d.lineAt(s.end.line).text.length;
+    return new vscode.Selection(s.start.line, 0, s.end.line, nLastLineLength);
 }

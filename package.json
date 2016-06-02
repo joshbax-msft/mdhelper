@@ -53,7 +53,7 @@
             { "command": "extension.toorderedlist", "key": "ctrl+l ctrl+o", "when": "editorTextFocus" },
             { "command": "extension.tolink", "key": "alt+l", "when": "editorTextFocus" },
             { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" },
-            { "command": "extension.toggleblockquote", "key": "ctrl+q", "when": "editorTextFocus" },
+            { "command": "extension.toggleblockquote", "key": "ctrl+shift+q", "when": "editorTextFocus" },
             { "command": "extension.debugpeek", "key": "ctrl+p", "when": "editorTextFocus" }
         ]
     },
