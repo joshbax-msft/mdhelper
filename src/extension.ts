@@ -20,12 +20,12 @@ export function activate(context: vscode.ExtensionContext) {
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "mdhelper" is now active!');
     
-    let disposable_debugpeek = vscode.commands.registerCommand('extension.debugpeek', () => {
-        let e: vscode.TextEditor = vscode.window.activeTextEditor;
-        let d: vscode.TextDocument = e.document;
-        let s: vscode.Selection = e.selection;
-        e.edit(function (edit) { Peek(d, s, 5); });
-    });
+    // let disposable_debugpeek = vscode.commands.registerCommand('extension.debugpeek', () => {
+    //     let e: vscode.TextEditor = vscode.window.activeTextEditor;
+    //     let d: vscode.TextDocument = e.document;
+    //     let s: vscode.Selection = e.selection;
+    //     e.edit(function (edit) { Peek(d, s, 5); });
+    // });
 
 
     let disposable_togglebold = vscode.commands.registerCommand('extension.togglebold', () => {
@@ -178,7 +178,18 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
     
-    context.subscriptions.push(disposable_debugpeek);
+    let disposable_formattable = vscode.commands.registerCommand('extension.formattable', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                FormatTable(d, edit, s[x]);  
+            }
+        });
+    });
+    
+    //context.subscriptions.push(disposable_debugpeek);
     context.subscriptions.push(disposable_togglebold);
     context.subscriptions.push(disposable_toggleitalics);
     context.subscriptions.push(disposable_togglestrikethrough);
@@ -285,16 +296,9 @@ function ToggleBlockquote(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
     let txtTrimmed: string = txt.trim();
     let txtReplace: string;
     
-    // if(IsPartialList(txtTrimmed, d, s)) { 
-    //     txtReplace = txt.replace(txtTrimmed, ToggleBlockquoteList(txtTrimmed)); 
-    // }
-    // else if(IsList(txtTrimmed)) {
-        
-    // }
-    // else 
     if(IsBlockquote(txtTrimmed)) { 
         txtReplace = txt.replace(txtTrimmed, RemoveBlockquote(txtTrimmed)); 
-    }
+    } 
     else { 
         txtReplace = txt.replace(txtTrimmed, AddBlockquote(txtTrimmed)); 
     }
@@ -736,4 +740,70 @@ function SelectWord(d: vscode.TextDocument, s: vscode.Selection) {
 function SelectLines(d: vscode.TextDocument, s: vscode.Selection) {
     let nLastLineLength: number = d.lineAt(s.end.line).text.length;
     return new vscode.Selection(s.start.line, 0, s.end.line, nLastLineLength);
+}
+
+function IsTable(txt: string) {
+    return true;
+}
+function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }
+    if(s.isEmpty) { return; }
+    
+    let txt: string = d.getText(new vscode.Range(s.start, s.end));
+    let txtTrimmed: string = txt.trim();
+    let txtReplace: string;
+
+    if(!IsTable(txt)) { return; }
+    
+    let nNumberOfColumns: number = 0;
+    let txtLines: string[] = txtTrimmed.split("\r\n");
+    let cells: string[][] = [];
+    
+    // split into cells and determine number of columns
+    for(let i = 0; i < txtLines.length; i++) {
+        cells[i] = [];
+        cells[i] = txtLines[i].split("|");
+        if(cells[i].length > nNumberOfColumns) { nNumberOfColumns = cells[i].length; }
+    }
+
+    // create array to hold column widths
+    let columnWidths: number[] = new Array(nNumberOfColumns);
+    for(let i = 0; i < columnWidths.length; i++) { columnWidths[i] = 0; }
+    
+    // determine column widths
+    for(let i = 0; i < nNumberOfColumns; i++) {
+        for(let j = 0; j < cells.length; j++) {
+            if(cells[j][i].length > columnWidths[i]) { 
+                columnWidths[i] = cells[j][i].length; 
+            }
+        }
+    }    
+    
+    // fill out columns
+    for(let i = 0; i < txtLines.length; i++) {
+        let padChar: string = " ";
+        if(IsDashLine(txtLines[i])) { padChar = "-"; }
+        txtLines[i] = "";
+        for(let j = 0; j < cells[i].length; j++) {
+            txtLines[i] += " " + Pad(cells[i][j], padChar, columnWidths[j]) + " |";
+        }
+        if(txtLines[i].length > 0) {
+            txtLines[i] = txtLines[i].substring(1, txtLines[i].length - 1);
+        }
+    }
+    
+    txtReplace = txt.replace(txtTrimmed, txtLines.join("\r\n"));
+    e.replace(s, txtReplace);
+}
+
+function Pad(txt: string, char: string, length: number) {
+    while(txt.length < length) { txt += char; }
+    return txt;
+}
+
+function IsDashLine(txt: string) {
+    for(let i = 0; i < txt.length; i++) {
+        if(txt[i] != "-" && txt[i] != "|" && txt[i] != " ") { return false; }
+    }
+    return true;
 }
