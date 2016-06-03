@@ -759,11 +759,12 @@ function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode
     let txtLines: string[] = txtTrimmed.split("\r\n");
     let cells: string[][] = [];
     
-    // split into cells and determine number of columns
+    // split and trim into cells, and determine number of columns
     for(let i = 0; i < txtLines.length; i++) {
         cells[i] = [];
         cells[i] = txtLines[i].split("|");
-        if(cells[i].length > nNumberOfColumns) { nNumberOfColumns = cells[i].length; }
+        for(let j = 0; j < cells[i].length; j++) { cells[i][j] = cells[i][j].trim(); }
+        if(cells[i].length > nNumberOfColumns) { nNumberOfColumns = cells[i].length; }               
     }
 
     // create array to hold column widths
@@ -777,19 +778,39 @@ function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode
                 columnWidths[i] = cells[j][i].length; 
             }
         }
-    }    
+    }
     
-    // fill out columns
+    // fill out columns; remove errant dash lines; force dash line if none exists
+    for(let i = txtLines.length - 1; i >= 0; i--) {
+        if(IsDashLine(txtLines[i]) && i != 1) {
+            txtLines.splice(i, 1);
+        }
+        else {
+            let padChar: string = " ";
+            if(IsDashLine(txtLines[i])) { padChar = "-"; }
+            txtLines[i] = "";
+            for(let j = 0; j < cells[i].length; j++) {
+                txtLines[i] += " " + Pad(cells[i][j], padChar, columnWidths[j]) + " |";
+            }
+            if(txtLines[i].length > 0) {
+                txtLines[i] = txtLines[i].substring(1, txtLines[i].length - 2);
+            }
+            if(i == 1 && !IsDashLine(txtLines[i])) {
+                // add a dash line
+                let txtDashLine: string = "";
+                for(let j = 0; j < cells[i].length; j++) {
+                    txtDashLine += " " + Pad("", "-", columnWidths[j]) + " |";
+                } 
+                if(txtDashLine.length > 0) {
+                    txtDashLine = txtDashLine.substring(1, txtDashLine.length - 2);
+                }
+                txtLines.splice(1, 0, txtDashLine);
+            }
+        }
+    }
+    
     for(let i = 0; i < txtLines.length; i++) {
-        let padChar: string = " ";
-        if(IsDashLine(txtLines[i])) { padChar = "-"; }
-        txtLines[i] = "";
-        for(let j = 0; j < cells[i].length; j++) {
-            txtLines[i] += " " + Pad(cells[i][j], padChar, columnWidths[j]) + " |";
-        }
-        if(txtLines[i].length > 0) {
-            txtLines[i] = txtLines[i].substring(1, txtLines[i].length - 1);
-        }
+        
     }
     
     txtReplace = txt.replace(txtTrimmed, txtLines.join("\r\n"));
