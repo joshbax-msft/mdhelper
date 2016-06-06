@@ -201,6 +201,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable_toorderedlist);
     context.subscriptions.push(disposable_tolink);
     context.subscriptions.push(disposable_toimagelink);
+    context.subscriptions.push(disposable_formattable);
 }
 
 // this method is called when your extension is deactivated
