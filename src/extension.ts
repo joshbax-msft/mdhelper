@@ -744,6 +744,10 @@ function SelectLines(d: vscode.TextDocument, s: vscode.Selection) {
 }
 
 function IsTable(txt: string) {
+    let txtLines: string[] = txt.split("\r\n");
+    for(let txtLine of txtLines) {
+        if(!IsTableLine(txtLine)) { return false; }
+    }
     return true;
 }
 function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
@@ -752,69 +756,10 @@ function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode
     
     let txt: string = d.getText(new vscode.Range(s.start, s.end));
     let txtTrimmed: string = txt.trim();
-    let txtReplace: string;
+    if(!IsTable(txtTrimmed)) { return; }
 
-    if(!IsTable(txt)) { return; }
-    
-    let nNumberOfColumns: number = 0;
-    let txtLines: string[] = txtTrimmed.split("\r\n");
-    let cells: string[][] = [];
-    
-    // split and trim into cells, and determine number of columns
-    for(let i = 0; i < txtLines.length; i++) {
-        cells[i] = [];
-        cells[i] = txtLines[i].split("|");
-        for(let j = 0; j < cells[i].length; j++) { cells[i][j] = cells[i][j].trim(); }
-        if(cells[i].length > nNumberOfColumns) { nNumberOfColumns = cells[i].length; }               
-    }
-
-    // create array to hold column widths
-    let columnWidths: number[] = new Array(nNumberOfColumns);
-    for(let i = 0; i < columnWidths.length; i++) { columnWidths[i] = 0; }
-    
-    // determine column widths
-    for(let i = 0; i < nNumberOfColumns; i++) {
-        for(let j = 0; j < cells.length; j++) {
-            if(cells[j][i].length > columnWidths[i]) { 
-                columnWidths[i] = cells[j][i].length; 
-            }
-        }
-    }
-    
-    // fill out columns; remove errant dash lines; force dash line if none exists
-    for(let i = txtLines.length - 1; i >= 0; i--) {
-        if(IsDashLine(txtLines[i]) && i != 1) {
-            txtLines.splice(i, 1);
-        }
-        else {
-            let padChar: string = " ";
-            if(IsDashLine(txtLines[i])) { padChar = "-"; }
-            txtLines[i] = "";
-            for(let j = 0; j < cells[i].length; j++) {
-                txtLines[i] += " " + Pad(cells[i][j], padChar, columnWidths[j]) + " |";
-            }
-            if(txtLines[i].length > 0) {
-                txtLines[i] = txtLines[i].substring(1, txtLines[i].length - 2);
-            }
-            if(i == 1 && !IsDashLine(txtLines[i])) {
-                // add a dash line
-                let txtDashLine: string = "";
-                for(let j = 0; j < cells[i].length; j++) {
-                    txtDashLine += " " + Pad("", "-", columnWidths[j]) + " |";
-                } 
-                if(txtDashLine.length > 0) {
-                    txtDashLine = txtDashLine.substring(1, txtDashLine.length - 2);
-                }
-                txtLines.splice(1, 0, txtDashLine);
-            }
-        }
-    }
-    
-    for(let i = 0; i < txtLines.length; i++) {
-        
-    }
-    
-    txtReplace = txt.replace(txtTrimmed, txtLines.join("\r\n"));
+    let table: Table = new Table(txtTrimmed);
+    let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
     e.replace(s, txtReplace);
 }
 
@@ -823,9 +768,103 @@ function Pad(txt: string, char: string, length: number) {
     return txt;
 }
 
+function IsTableLine(txt: string) {
+    return txt.indexOf("|") != -1;
+}
 function IsDashLine(txt: string) {
     for(let i = 0; i < txt.length; i++) {
         if(txt[i] != "-" && txt[i] != "|" && txt[i] != " ") { return false; }
     }
     return true;
+}
+
+function ParseTableFromCursorPosition(d: vscode.TextDocument, s: vscode.Selection) {
+
+}
+
+class Table {
+    columnWidths: number[];
+    cells: string[][];
+    lines: string[];
+    formattedString: string;
+    cursorX: number;
+    cursorY: number;
+
+    constructor(txt: string, _cursorX?: number, _cursorY?: number) {
+        this.cursorX = _cursorX == null ? -1 : _cursorX;
+        this.cursorY = _cursorY == null ? -1 : _cursorY;
+
+        this.lines = txt.split("\r\n");
+        this.cells = [];
+
+        let nNumberOfColumns: number = 0;
+
+        // split and trim into cells, and determine number of columns
+        for(let i = 0; i < this.lines.length; i++) {
+            this.cells[i] = [];
+            this.cells[i] = this.lines[i].split("|");
+            for(let j = 0; j < this.cells[i].length; j++) { this.cells[i][j] = this.cells[i][j].trim(); }
+            if(this.cells[i].length > nNumberOfColumns) { nNumberOfColumns = this.cells[i].length; }               
+        }
+
+        // create array to hold column widths
+        this.columnWidths = new Array(nNumberOfColumns);
+        for(let i = 0; i < this.columnWidths.length; i++) { this.columnWidths[i] = 0; }
+        
+        // determine column widths
+        for(let i = 0; i < nNumberOfColumns; i++) {
+            for(let j = 0; j < this.cells.length; j++) {
+                if(this.cells[j][i].length > this.columnWidths[i]) { 
+                    this.columnWidths[i] = this.cells[j][i].length; 
+                }
+            }
+        }
+
+        // format and set formattedString
+        // remove errant dash lines; force dash line if none exists
+        for(let i = this.lines.length - 1; i >= 0; i--) {
+            if(IsDashLine(this.lines[i]) && i != 1) {
+                this.lines.splice(i, 1);
+            }
+            else {
+                let padChar: string = " ";
+                if(IsDashLine(this.lines[i])) { padChar = "-"; }
+                this.lines[i] = "";
+                for(let j = 0; j < this.cells[i].length; j++) {
+                    this.lines[i] += " " + Pad(this.cells[i][j], padChar, this.columnWidths[j]) + " |";
+                }
+                if(this.lines[i].length > 0) {
+                    this.lines[i] = this.lines[i].substring(1, this.lines[i].length - 2);
+                }
+                if(i == 1 && !IsDashLine(this.lines[i])) {
+                    // add a dash line
+                    let txtDashLine: string = "";
+                    for(let j = 0; j < this.lines[i].length; j++) {
+                        txtDashLine += " " + Pad("", "-", this.columnWidths[j]) + " |";
+                    } 
+                    if(txtDashLine.length > 0) {
+                        txtDashLine = txtDashLine.substring(1, txtDashLine.length - 2);
+                    }
+                    this.lines.splice(1, 0, txtDashLine);
+                }
+                
+                this.lines[i] = this.lines[i].trim();
+            }
+        }
+
+        this.formattedString = this.lines.join("\r\n");
+    }
+    ToString() { return this.formattedString; }
+    AddColumnRight(column_index: number) {
+        // can assume formatted table
+    }
+    AddColumnLeft(column_index: number) {
+        // can assume formatted table
+    }
+    AddRowBelow(row_index: number) {
+        // can assume formatted table
+    }
+    AddRowAbove(row_index: number) {
+        // can assume formatted table
+    }
 }
