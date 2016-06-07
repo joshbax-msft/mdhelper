@@ -24,6 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
     //     let e: vscode.TextEditor = vscode.window.activeTextEditor;
     //     let d: vscode.TextDocument = e.document;
     //     let s: vscode.Selection = e.selection;
+    //     // add debug output to Peek before enabling
     //     e.edit(function (edit) { Peek(d, s, 5); });
     // });
 
@@ -501,7 +502,26 @@ function ToggleCodeBlock(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vs
     e.replace(s, txtReplace); 
 }
 
-// helpers
+function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }
+    if(s.isEmpty) { return; }
+    
+    let txt: string = d.getText(new vscode.Range(s.start, s.end));
+    let txtTrimmed: string = txt.trim();
+    if(!IsTable(txtTrimmed)) { return; }
+
+    let table: Table = new Table(txtTrimmed);
+    let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+    e.replace(s, txtReplace);
+}
+
+/////////////////////////////////////
+//
+// START HELPERS
+//
+/////////////////////////////////////
+
+// code block
 function IsCodeBlock(txt: string) { return txt.startsWith("```\r\n") && txt.endsWith("\r\n```"); }
 function ConvertCodeBlock(txt: string) {
     if(IsCodeBlock(txt)) { return AddCodeBlock(RemoveCodeBlock(txt)); }
@@ -528,51 +548,13 @@ function StripCodeBlocks(txt: string) {
     }    
     return txtReturn;
 }
+
+// code inline
 function IsCodeInline(txt: string) { return !IsCodeBlock(txt) && (txt.startsWith("`") && txt.endsWith("`")); }
 function AddCodeInline(txt: string) { return "`" + txt + "`"; }
 function RemoveCodeInline(txt: string) {
     if(IsCodeInline(txt)) { return txt.substring(1, txt.length - 1); }
     else { return txt; }
-}
-function AddBold(txt: string) { return "**" + RemoveBold(txt) + "**"; }
-function RemoveBold(txt: string) { 
-    if(IsBold(txt)) { return txt.substring(2, txt.length - 2); }
-    else if(IsItalicizedAndBold(txt)) { return AddItalics(txt.substring(3, txt.length - 3)); }
-    else { return txt; } 
-}
-function AddItalics(txt: string) { return "_" + RemoveItalics(txt) + "_"; }
-function RemoveItalics(txt: string) { 
-    if(IsItalicized(txt)) { return txt.substring(1, txt.length - 1); }
-    else if(IsBoldAndItalicized(txt)) { return AddBold(txt.substring(3, txt.length - 3)); }
-    else { return txt; } 
-}
-function IsStrikethrough(txt: string) { return txt.startsWith("~~") && txt.endsWith("~~"); }
-function AddStrikethrough(txt: string) { return "~~" + txt + "~~"; }
-function RemoveStrikethrough(txt: string) { 
-    if(IsStrikethrough(txt)) { return txt.substring(2, txt.length - 2); }
-    else { return txt; } 
-}
-
-function IsBold(txt: string) { return (txt.startsWith("**") && txt.endsWith("**")) || (txt.startsWith("__") && txt.endsWith("__")); }
-function IsBoldList(txtList: string) {
-    // assumes txtList is a valid list
-    let txtLines: string[] = txtList.split("\n");
-    for(let txtLine of txtLines) {
-        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
-        let txtAfterBullet: string = matches[4];
-        if(!(IsBold(txtAfterBullet) || IsItalicizedAndBold(txtAfterBullet))) { return false; }
-    }
-    return true;
-}
-function IsItalicizedList(txtList: string) {
-    // assumes txtList is a valid list
-    let txtLines: string[] = txtList.split("\n");
-    for(let txtLine of txtLines) {
-        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
-        let txtAfterBullet: string = matches[4];
-        if(!(IsItalicized(txtAfterBullet) || IsBoldAndItalicized(txtAfterBullet))) { return false; }
-    }
-    return true;
 }
 function IsCodeInlineList(txtList: string) {
     // assumes txtList is a valid list
@@ -584,8 +566,64 @@ function IsCodeInlineList(txtList: string) {
     }
     return true;
 }
-function IsStrikethroughList(txtList: string) {
+
+// bold/italics
+function AddBold(txt: string) { return "**" + RemoveBold(txt) + "**"; }
+function RemoveBold(txt: string) { 
+    if(IsBold(txt)) { return txt.substring(2, txt.length - 2); }
+    else if(IsItalicizedAndBold(txt)) { return AddItalics(txt.substring(3, txt.length - 3)); }
+    else { return txt; } 
+}
+function IsBold(txt: string) { return (txt.startsWith("**") && txt.endsWith("**")) || (txt.startsWith("__") && txt.endsWith("__")); }
+function IsBoldList(txtList: string) {
     // assumes txtList is a valid list
+    let txtLines: string[] = txtList.split("\n");
+    for(let txtLine of txtLines) {
+        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
+        let txtAfterBullet: string = matches[4];
+        if(!(IsBold(txtAfterBullet) || IsItalicizedAndBold(txtAfterBullet))) { return false; }
+    }
+    return true;
+}
+function AddItalics(txt: string) { return "_" + RemoveItalics(txt) + "_"; }
+function RemoveItalics(txt: string) { 
+    if(IsItalicized(txt)) { return txt.substring(1, txt.length - 1); }
+    else if(IsBoldAndItalicized(txt)) { return AddBold(txt.substring(3, txt.length - 3)); }
+    else { return txt; } 
+}
+function IsItalicizedList(txtList: string) {
+    // assumes txtList is a valid list
+    let txtLines: string[] = txtList.split("\n");
+    for(let txtLine of txtLines) {
+        let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
+        let txtAfterBullet: string = matches[4];
+        if(!(IsItalicized(txtAfterBullet) || IsBoldAndItalicized(txtAfterBullet))) { return false; }
+    }
+    return true;
+}
+function IsItalicized(txt: string) { return ((txt.startsWith("_") && txt.endsWith("_")) && !(txt.startsWith("__") && txt.endsWith("__"))) 
+    || ((txt.startsWith("*") && txt.endsWith("*") && !(txt.startsWith("**") && txt.endsWith("**")))); }
+function IsItalicizedAndBold(txt: string) { return (txt.startsWith("_**") && txt.endsWith("**_")) || (txt.startsWith("*__") && txt.endsWith("__*")); }
+function IsBoldAndItalicized(txt: string) { return (txt.startsWith("**_") && txt.endsWith("_**")) || (txt.startsWith("__*") && txt.endsWith("*__")); }
+function StripItalics(txt: string) { return TrimSingles(TrimSingles(txt, "*"), "_"); }
+function ConvertBold(txt: string) {
+    if (IsBold(txt)) { return AddBold(RemoveBold(txt)); }
+    else { return txt; }    
+}
+function ConvertItalics(txt: string) {
+    if (IsItalicized(txt)) { return AddItalics(RemoveItalics(txt)); }
+    else { return txt; }    
+}
+
+// strikethrough
+function IsStrikethrough(txt: string) { return txt.startsWith("~~") && txt.endsWith("~~"); }
+function AddStrikethrough(txt: string) { return "~~" + txt + "~~"; }
+function RemoveStrikethrough(txt: string) { 
+    if(IsStrikethrough(txt)) { return txt.substring(2, txt.length - 2); }
+    else { return txt; } 
+}
+function IsStrikethroughList(txtList: string) {
+    // assumes valid list
     let txtLines: string[] = txtList.split("\n");
     for(let txtLine of txtLines) {
         let matches: RegExpMatchArray = txtLine.match(global_expression_list_line);
@@ -594,10 +632,8 @@ function IsStrikethroughList(txtList: string) {
     }
     return true;
 }
-function IsItalicized(txt: string) { return ((txt.startsWith("_") && txt.endsWith("_")) && !(txt.startsWith("__") && txt.endsWith("__"))) 
-    || ((txt.startsWith("*") && txt.endsWith("*") && !(txt.startsWith("**") && txt.endsWith("**")))); }
-function IsItalicizedAndBold(txt: string) { return (txt.startsWith("_**") && txt.endsWith("**_")) || (txt.startsWith("*__") && txt.endsWith("__*")); }
-function IsBoldAndItalicized(txt: string) { return (txt.startsWith("**_") && txt.endsWith("_**")) || (txt.startsWith("__*") && txt.endsWith("*__")); }
+
+// links
 function ContainsLink(txt: string) {
     let match: RegExpExecArray = global_expression_link.exec(txt);
     return (match != null);
@@ -606,6 +642,8 @@ function ContainsImageLink(txt: string) {
     let match: RegExpExecArray = global_expression_image.exec(txt);
     return (match != null);
 }
+
+// blockquote
 function IsBlockquote(txt: string) {
     let txtLines: string[] = txt.split("\n");
     for(let i = 0; i < txtLines.length; i++) {
@@ -614,8 +652,8 @@ function IsBlockquote(txt: string) {
     }    
     return true;
 }
-// assumes whole lines are selected (to append spaces, if needed)
 function AddBlockquote(txt: string) {
+    // assumes whole lines are selected (to append spaces, if needed)
     let txtLines: string[] = txt.split("\n");
     for(let i = 0; i < txtLines.length; i++) {
         txtLines[i] = "> " + txtLines[i];
@@ -633,40 +671,8 @@ function RemoveBlockquote(txt: string) {
     }    
     return txtLines.join("\n");
 }
-// returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
-// includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
-function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
-    if(n <= 0) { return; }
-    else if(n > 0) {
-        // look ahead
-        let nCurrentLineIndex: number = s.end.line;
-        let txtReturn: string = "";
-        let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
-        
-        if(s.end.character + n > txtCurrentLine.length) {
-            // add the rest of the current line to txtReturn
-            txtReturn += txtCurrentLine.substring(s.end.character);
-            txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
-            while(txtReturn.length < n && ++nCurrentLineIndex < d.lineCount - 1) {
-                txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
-                let nNeededCharacters: number = n - txtReturn.length;
-                if(txtCurrentLine.length < nNeededCharacters) {
-                    txtReturn += txtCurrentLine;
-                    txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
-                    
-                }
-                else {
-                    txtReturn += txtCurrentLine.substring(0, nNeededCharacters);
-                }
-            }
-        }
-        else {            
-            txtReturn = txtCurrentLine.substring(s.end.character, s.end.character + n); 
-        }
-        
-        return txtReturn;        
-    }
-}
+
+// list
 function IsPartialList(txt: string, d: vscode.TextDocument, s: vscode.Selection) {
     // partial list is a selection that is a list with an adjacent line that is also a list [item]
     if(!IsList(txt)) { return false; }
@@ -698,51 +704,8 @@ function IsOrderedList(txt: string) {
     }    
     return true;
 }
-function StripItalics(txt: string) { return TrimSingles(TrimSingles(txt, "*"), "_"); }
-function TrimSingles(txt: string, char: string) {
-    if(txt.length == 1) {
-        if(txt == char) { return ""; }
-        else { return txt; }  
-    }
-    else if(txt.length == 2) {
-        let strCompare: string = char + char;
-        if(txt == strCompare) { return txt; }
-        else { return txt.replace(char, ""); }
-    }
-    else {
-        // length > 2
-        let txtReturn: string = "";
-        // handle 0
-        if(txt[0] != char || txt[1] == char) { txtReturn += txt[0]; }
-        // handle middle
-        for(let i = 1; i < txt.length - 1; i++) {
-            if(txt[i] != char || txt[i - 1] == char || txt[i + 1] == char) { txtReturn += txt[i]; }
-        }
-        // handle last char
-        if(txt[txt.length - 1] != char || txt[txt.length - 2] == char) { txtReturn += txt[txt.length - 1]; }
-        return txtReturn;
-    }
-}
-function ConvertBold(txt: string) {
-    if (IsBold(txt)) { return AddBold(RemoveBold(txt)); }
-    else { return txt; }    
-}
-function ConvertItalics(txt: string) {
-    if (IsItalicized(txt)) { return AddItalics(RemoveItalics(txt)); }
-    else { return txt; }    
-}
-function SelectWord(d: vscode.TextDocument, s: vscode.Selection) {
-    let txtLine: string = d.lineAt(s.active.line).text;
-    let spacePreceding: number = txtLine.lastIndexOf(' ', s.start.character - 1);
-    let spaceFollowing: number = txtLine.indexOf(' ', s.start.character);
-    if(spaceFollowing == -1) { spaceFollowing = txtLine.length; }
-    return new vscode.Selection(new vscode.Position(s.active.line, spacePreceding + 1), new vscode.Position(s.active.line, spaceFollowing));
-}
-function SelectLines(d: vscode.TextDocument, s: vscode.Selection) {
-    let nLastLineLength: number = d.lineAt(s.end.line).text.length;
-    return new vscode.Selection(s.start.line, 0, s.end.line, nLastLineLength);
-}
 
+// table
 function IsTable(txt: string) {
     let txtLines: string[] = txt.split("\r\n");
     for(let txtLine of txtLines) {
@@ -750,34 +713,17 @@ function IsTable(txt: string) {
     }
     return true;
 }
-function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
-    if(d.getText().length == 0) { return; }
-    if(s.isEmpty) { return; }
-    
-    let txt: string = d.getText(new vscode.Range(s.start, s.end));
-    let txtTrimmed: string = txt.trim();
-    if(!IsTable(txtTrimmed)) { return; }
-
-    let table: Table = new Table(txtTrimmed);
-    let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
-    e.replace(s, txtReplace);
-}
-
 function Pad(txt: string, char: string, length: number) {
     while(txt.length < length) { txt += char; }
     return txt;
 }
-
-function IsTableLine(txt: string) {
-    return txt.indexOf("|") != -1;
-}
+function IsTableLine(txt: string) { return txt.indexOf("|") != -1; }
 function IsDashLine(txt: string) {
     for(let i = 0; i < txt.length; i++) {
         if(txt[i] != "-" && txt[i] != "|" && txt[i] != " ") { return false; }
     }
     return true;
 }
-
 function ParseTableFromCursorPosition(d: vscode.TextDocument, s: vscode.Selection) {
 
 }
@@ -867,4 +813,76 @@ class Table {
     AddRowAbove(row_index: number) {
         // can assume formatted table
     }
+}
+
+// miscellaneous/utility
+function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
+    // returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
+    // includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
+    if(n <= 0) { return; }
+    else if(n > 0) {
+        // look ahead
+        let nCurrentLineIndex: number = s.end.line;
+        let txtReturn: string = "";
+        let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
+        
+        if(s.end.character + n > txtCurrentLine.length) {
+            // add the rest of the current line to txtReturn
+            txtReturn += txtCurrentLine.substring(s.end.character);
+            txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
+            while(txtReturn.length < n && ++nCurrentLineIndex < d.lineCount - 1) {
+                txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
+                let nNeededCharacters: number = n - txtReturn.length;
+                if(txtCurrentLine.length < nNeededCharacters) {
+                    txtReturn += txtCurrentLine;
+                    txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
+                    
+                }
+                else {
+                    txtReturn += txtCurrentLine.substring(0, nNeededCharacters);
+                }
+            }
+        }
+        else {            
+            txtReturn = txtCurrentLine.substring(s.end.character, s.end.character + n); 
+        }
+        
+        return txtReturn;        
+    }
+}
+
+function TrimSingles(txt: string, char: string) {
+    if(txt.length == 1) {
+        if(txt == char) { return ""; }
+        else { return txt; }  
+    }
+    else if(txt.length == 2) {
+        let strCompare: string = char + char;
+        if(txt == strCompare) { return txt; }
+        else { return txt.replace(char, ""); }
+    }
+    else {
+        // length > 2
+        let txtReturn: string = "";
+        // handle 0
+        if(txt[0] != char || txt[1] == char) { txtReturn += txt[0]; }
+        // handle middle
+        for(let i = 1; i < txt.length - 1; i++) {
+            if(txt[i] != char || txt[i - 1] == char || txt[i + 1] == char) { txtReturn += txt[i]; }
+        }
+        // handle last char
+        if(txt[txt.length - 1] != char || txt[txt.length - 2] == char) { txtReturn += txt[txt.length - 1]; }
+        return txtReturn;
+    }
+}
+function SelectWord(d: vscode.TextDocument, s: vscode.Selection) {
+    let txtLine: string = d.lineAt(s.active.line).text;
+    let spacePreceding: number = txtLine.lastIndexOf(' ', s.start.character - 1);
+    let spaceFollowing: number = txtLine.indexOf(' ', s.start.character);
+    if(spaceFollowing == -1) { spaceFollowing = txtLine.length; }
+    return new vscode.Selection(new vscode.Position(s.active.line, spacePreceding + 1), new vscode.Position(s.active.line, spaceFollowing));
+}
+function SelectLines(d: vscode.TextDocument, s: vscode.Selection) {
+    let nLastLineLength: number = d.lineAt(s.end.line).text.length;
+    return new vscode.Selection(s.start.line, 0, s.end.line, nLastLineLength);
 }
