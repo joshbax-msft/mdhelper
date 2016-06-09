@@ -504,15 +504,17 @@ function ToggleCodeBlock(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vs
 
 function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }
-    if(s.isEmpty) { return; }
+    if(s.isEmpty) { s = SelectTable(d, s); }
     
-    let txt: string = d.getText(new vscode.Range(s.start, s.end));
-    let txtTrimmed: string = txt.trim();
-    if(!IsTable(txtTrimmed)) { return; }
+    if(s != null) {
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
 
-    let table: Table = new Table(txtTrimmed);
-    let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
-    e.replace(s, txtReplace);
+        let table: Table = new Table(txtTrimmed);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);    
+    }
 }
 
 /////////////////////////////////////
@@ -724,8 +726,75 @@ function IsDashLine(txt: string) {
     }
     return true;
 }
-function ParseTableFromCursorPosition(d: vscode.TextDocument, s: vscode.Selection) {
+function SelectAndParseTable(d: vscode.TextDocument, s: vscode.Selection) {
+    let txtLines: string[] = [];
+    let txtLine: string = d.lineAt(s.active.line).text;
+    txtLines[0] = txtLine;
+    
+    let column: number = GetTableColumn(d, s);
+    let row: number = GetTableRow(d, s);
+    vscode.window.showInformationMessage("Row: " + row.toString() + " Column: " + column.toString());
+    s = new vscode.Selection(s.active.line, 0, s.active.line, txtLine.length);    
+}
 
+function SelectTable(d: vscode.TextDocument, s: vscode.Selection) {
+    let lineStart: number = s.start.line;
+    let lineEnd: number = s.end.line;
+
+    // initial checks
+    let txtLine: string = d.lineAt(lineStart).text;
+    if(!IsTableLine(txtLine)) { return null; }    
+    txtLine = d.lineAt(lineEnd).text;
+    if(!IsTableLine(txtLine)) { return null; }
+
+    // check following lines
+    // note: lineCount is one-based; lineAt is zero-based
+    if(lineEnd < d.lineCount - 1) {
+        txtLine = d.lineAt(lineEnd + 1).text;
+        while((lineEnd + 1) < d.lineCount && IsTableLine(txtLine)) {
+            lineEnd++;
+            if(lineEnd < d.lineCount - 1) { txtLine = d.lineAt(lineEnd + 1).text; }            
+        }
+    }
+
+    // check preceding lines
+    if(lineStart > 0) {
+        txtLine = d.lineAt(lineStart - 1).text;
+        while((lineStart - 1) >= 0 && IsTableLine(txtLine)) {
+            lineStart--;
+            if(lineStart > 0) { txtLine = d.lineAt(lineStart - 1).text; }            
+        }
+    }
+
+    return new vscode.Selection(lineStart, 0, lineEnd, d.lineAt(lineEnd).text.length);
+}
+
+function GetTableColumn(d: vscode.TextDocument, s: vscode.Selection) {
+    let txtLine: string = d.lineAt(s.active.line).text.trim();
+    if(txtLine.startsWith("|")) { txtLine = txtLine.substring(1); }
+    if(txtLine.endsWith("|")) { txtLine = txtLine.substring(0, txtLine.length - 1); }
+
+    let nTotalColumns: number = txtLine.split("|").length - 1; 
+    let nCountAfter: number = 0;
+    let nCurrentIndex: number = txtLine.indexOf("|", s.active.character);
+    while(nCurrentIndex != -1) {
+        nCountAfter++;
+        nCurrentIndex = txtLine.indexOf("|", nCurrentIndex + 1);
+    }
+
+    return nTotalColumns - nCountAfter;
+}
+
+function GetTableRow(d: vscode.TextDocument, s: vscode.Selection) {
+    let row: number = -1;
+    let nCurrentLine: number = s.active.line;
+    let txtLine: string = d.lineAt(nCurrentLine).text.trim();
+    while(IsTableLine(txtLine)) {
+        row++;
+        nCurrentLine--;
+        txtLine = d.lineAt(nCurrentLine).text.trim();
+    }
+    return row;
 }
 
 class Table {
@@ -785,7 +854,7 @@ class Table {
                 if(i == 1 && !IsDashLine(this.lines[i])) {
                     // add a dash line
                     let txtDashLine: string = "";
-                    for(let j = 0; j < this.lines[i].length; j++) {
+                    for(let j = 0; j < this.columnWidths.length; j++) {
                         txtDashLine += " " + Pad("", "-", this.columnWidths[j]) + " |";
                     } 
                     if(txtDashLine.length > 0) {
