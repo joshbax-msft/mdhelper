@@ -23,7 +23,11 @@
         "onCommand:extension.tolink",
         "onCommand:extension.toimagelink",
         "onCommand:extension.toggleblockquote",
-        "onCommand:extension.formattable"
+        "onCommand:extension.formattable",
+        "onCommand:extension.tableaddcolumnright",
+        "onCommand:extension.tableaddcolumnleft",
+        "onCommand:extension.tableaddrowabove",
+        "onCommand:extension.tableaddrowbelow"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -40,7 +44,11 @@
             { "command": "extension.tolink", "title": "Markdown: Convert to link" },
             { "command": "extension.toimagelink", "title": "Markdown: Convert to image link" },
             { "command": "extension.toggleblockquote", "title": "Markdown: Toggle blockquote" },
-            { "command": "extension.formattable", "title": "Markdown: Format table" }
+            { "command": "extension.formattable", "title": "Markdown: Format table" },
+            { "command": "extension.tableaddcolumnright", "title": "Markdown: Add table column to the right" },
+            { "command": "extension.tableaddcolumnleft", "title": "Markdown: Add table column to the left" },
+            { "command": "extension.tableaddrowabove", "title": "Markdown: Add table row above" },
+            { "command": "extension.tableaddrowbelow", "title": "Markdown: Add table row below" }
         ],
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
@@ -55,7 +63,11 @@
             { "command": "extension.tolink", "key": "alt+l", "when": "editorTextFocus" },
             { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" },
             { "command": "extension.toggleblockquote", "key": "ctrl+shift+q", "when": "editorTextFocus" },
-            { "command": "extension.formattable", "key": "ctrl+shift+t", "when": "editorTextFocus" }
+            { "command": "extension.formattable", "key": "ctrl+shift+t", "when": "editorTextFocus" },
+            { "command": "extension.tableaddcolumnright", "key": "ctrl+shift+r", "when": "editorTextFocus" },
+            { "command": "extension.tableaddcolumnleft", "key": "ctrl+shift+l", "when": "editorTextFocus" },
+            { "command": "extension.tableaddrowabove", "key": "ctrl+shift+a", "when": "editorTextFocus" },
+            { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+b", "when": "editorTextFocus" }
         ]
     },
     "scripts": {

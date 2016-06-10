@@ -189,6 +189,50 @@ export function activate(context: vscode.ExtensionContext) {
             }
         });
     });
+
+    let disposable_tableaddcolumnright = vscode.commands.registerCommand('extension.tableaddcolumnright', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                TableAddColumnRight(d, edit, s[x]);  
+            }
+        });
+    });
+
+    let disposable_tableaddcolumnleft = vscode.commands.registerCommand('extension.tableaddcolumnleft', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                TableAddColumnLeft(d, edit, s[x]);  
+            }
+        });
+    });
+
+        let disposable_tableaddrowabove = vscode.commands.registerCommand('extension.tableaddrowabove', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                TableAddRowAbove(d, edit, s[x]);  
+            }
+        });
+    });
+
+        let disposable_tableaddrowbelow = vscode.commands.registerCommand('extension.tableaddrowbelow', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                TableAddRowBelow(d, edit, s[x]);  
+            }
+        });
+    });
     
     //context.subscriptions.push(disposable_debugpeek);
     context.subscriptions.push(disposable_togglebold);
@@ -203,6 +247,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable_tolink);
     context.subscriptions.push(disposable_toimagelink);
     context.subscriptions.push(disposable_formattable);
+    context.subscriptions.push(disposable_tableaddcolumnright);
 }
 
 // this method is called when your extension is deactivated
@@ -512,6 +557,74 @@ function FormatTable(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode
         if(!IsTable(txtTrimmed)) { return; }
 
         let table: Table = new Table(txtTrimmed);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);    
+    }
+}
+
+function TableAddColumnRight(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }    
+    if(s.isEmpty) {
+        let column: number = GetTableColumn(d, s);
+        
+        s = SelectTable(d, s);
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
+
+        let table: Table = new Table(txtTrimmed);
+        table.AddColumnRight(column);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);    
+    }
+}
+
+function TableAddColumnLeft(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }    
+    if(s.isEmpty) {
+        let column: number = GetTableColumn(d, s);
+        
+        s = SelectTable(d, s);
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
+
+        let table: Table = new Table(txtTrimmed);
+        table.AddColumnLeft(column);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);    
+    }
+}
+
+function TableAddRowAbove(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }    
+    if(s.isEmpty) {
+        let row: number = GetTableRow(d, s);
+        
+        s = SelectTable(d, s);
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
+
+        let table: Table = new Table(txtTrimmed);
+        table.AddRowAbove(row);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);    
+    }
+}
+
+function TableAddRowBelow(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }    
+    if(s.isEmpty) {
+        let row: number = GetTableRow(d, s);
+        
+        s = SelectTable(d, s);
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
+
+        let table: Table = new Table(txtTrimmed);
+        table.AddRowBelow(row);
         let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
         e.replace(s, txtReplace);    
     }
@@ -835,6 +948,10 @@ class Table {
             }
         }
 
+        this.FormatString();
+    }
+    ToString() { return this.formattedString; }
+    FormatString() {
         // format and set formattedString
         // remove errant dash lines; force dash line if none exists
         for(let i = this.lines.length - 1; i >= 0; i--) {
@@ -869,12 +986,33 @@ class Table {
 
         this.formattedString = this.lines.join("\r\n");
     }
-    ToString() { return this.formattedString; }
     AddColumnRight(column_index: number) {
         // can assume formatted table
+        // foreach row of cells
+        //   splice in a cell at column_index + 1
+        for(let i = 0; i < this.cells.length; i++) {
+            if(IsDashLine(this.lines[i])) {
+                this.cells[i].splice(column_index + 1, 0, "---");
+            }
+            else {
+                this.cells[i].splice(column_index + 1, 0, "   ");
+            }            
+        }
+
+        this.FormatString();
     }
     AddColumnLeft(column_index: number) {
         // can assume formatted table
+        for(let i = 0; i < this.cells.length; i++) {
+            if(IsDashLine(this.lines[i])) {
+                this.cells[i].splice(column_index, 0, "---");
+            }
+            else {
+                this.cells[i].splice(column_index, 0, "   ");
+            }            
+        }
+
+        this.FormatString();
     }
     AddRowBelow(row_index: number) {
         // can assume formatted table
