@@ -834,6 +834,7 @@ function Pad(txt: string, char: string, length: number) {
 }
 function IsTableLine(txt: string) { return txt.indexOf("|") != -1; }
 function IsDashLine(txt: string) {
+    if(txt.indexOf("-") == -1) { return false; }
     for(let i = 0; i < txt.length; i++) {
         if(txt[i] != "-" && txt[i] != "|" && txt[i] != " ") { return false; }
     }
@@ -902,10 +903,12 @@ function GetTableRow(d: vscode.TextDocument, s: vscode.Selection) {
     let row: number = -1;
     let nCurrentLine: number = s.active.line;
     let txtLine: string = d.lineAt(nCurrentLine).text.trim();
-    while(IsTableLine(txtLine)) {
+    while(IsTableLine(txtLine) && nCurrentLine >= 0) {
         row++;
         nCurrentLine--;
-        txtLine = d.lineAt(nCurrentLine).text.trim();
+        if(nCurrentLine >= 0) {
+            txtLine = d.lineAt(nCurrentLine).text.trim();    
+        }        
     }
     return row;
 }
@@ -980,7 +983,9 @@ class Table {
                     this.lines.splice(1, 0, txtDashLine);
                 }
                 
-                this.lines[i] = this.lines[i].trim();
+                // if(!IsEmptyCell(this.cells[i][0]) && !IsEmptyCell(this.cells[i][this.cells[i].length - 1])) {
+                //     this.lines[i] = this.lines[i].trim();
+                // }
             }
         }
 
@@ -999,6 +1004,8 @@ class Table {
             }            
         }
 
+        // splice in a new columnWidth
+        this.columnWidths.splice(column_index + 1, 0, 3);
         this.FormatString();
     }
     AddColumnLeft(column_index: number) {
@@ -1012,16 +1019,33 @@ class Table {
             }            
         }
 
+        // splice in a new columnWidth
+        this.columnWidths.splice(column_index, 0, 3);
         this.FormatString();
     }
     AddRowBelow(row_index: number) {
         // can assume formatted table
+        let insert_cells: string[] = [];
+        let padChar: string = " ";
+        if(row_index + 1 < this.lines.length && IsDashLine(this.lines[row_index + 1])) { row_index++; }
+        for(let j = 0; j < this.cells[row_index].length; j++) {
+            insert_cells[j] = padChar;
+        }
+        // insert dummy line (for format processing)
+        this.lines.splice(row_index + 1, 0, " ");
+        this.cells.splice(row_index + 1, 0, insert_cells);
+        this.FormatString();
     }
     AddRowAbove(row_index: number) {
         // can assume formatted table
     }
 }
-
+function IsEmptyCell(txt: string) {
+    for(let i = 0; i < txt.length; i++) {
+        if(txt[i] != " ") { return false; }
+    }
+    return true;
+}
 // miscellaneous/utility
 function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
     // returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
