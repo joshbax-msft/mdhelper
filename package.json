@@ -63,11 +63,11 @@
             { "command": "extension.tolink", "key": "alt+l", "when": "editorTextFocus" },
             { "command": "extension.toimagelink", "key": "alt+i", "when": "editorTextFocus" },
             { "command": "extension.toggleblockquote", "key": "ctrl+shift+q", "when": "editorTextFocus" },
-            { "command": "extension.formattable", "key": "ctrl+shift+t", "when": "editorTextFocus" },
-            { "command": "extension.tableaddcolumnright", "key": "ctrl+shift+r", "when": "editorTextFocus" },
-            { "command": "extension.tableaddcolumnleft", "key": "ctrl+shift+l", "when": "editorTextFocus" },
-            { "command": "extension.tableaddrowabove", "key": "ctrl+shift+a", "when": "editorTextFocus" },
-            { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+b", "when": "editorTextFocus" }
+            { "command": "extension.formattable", "key": "ctrl+shift+t ctrl+shift+f", "when": "editorTextFocus" },
+            { "command": "extension.tableaddcolumnright", "key": "ctrl+shift+t ctrl+shift+r", "when": "editorTextFocus" },
+            { "command": "extension.tableaddcolumnleft", "key": "ctrl+shift+t ctrl+shift+l", "when": "editorTextFocus" },
+            { "command": "extension.tableaddrowabove", "key": "ctrl+shift+t ctrl+shift+a", "when": "editorTextFocus" },
+            { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+t ctrl+shift+b", "when": "editorTextFocus" }
         ]
     },
     "scripts": {

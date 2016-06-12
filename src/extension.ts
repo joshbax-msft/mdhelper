@@ -196,7 +196,7 @@ export function activate(context: vscode.ExtensionContext) {
         let s: vscode.Selection[] = e.selections;
         e.edit(function (edit) { 
             for(let x = 0; x < s.length; x++) {
-                TableAddColumnRight(d, edit, s[x]);  
+                TableAddColumnRight(d, edit, s[x]);
             }
         });
     });
@@ -212,7 +212,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-        let disposable_tableaddrowabove = vscode.commands.registerCommand('extension.tableaddrowabove', () => {
+    let disposable_tableaddrowabove = vscode.commands.registerCommand('extension.tableaddrowabove', () => {
         let e: vscode.TextEditor = vscode.window.activeTextEditor;
         let d: vscode.TextDocument = e.document;
         let s: vscode.Selection[] = e.selections;
@@ -223,7 +223,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-        let disposable_tableaddrowbelow = vscode.commands.registerCommand('extension.tableaddrowbelow', () => {
+    let disposable_tableaddrowbelow = vscode.commands.registerCommand('extension.tableaddrowbelow', () => {
         let e: vscode.TextEditor = vscode.window.activeTextEditor;
         let d: vscode.TextDocument = e.document;
         let s: vscode.Selection[] = e.selections;
@@ -248,6 +248,9 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable_toimagelink);
     context.subscriptions.push(disposable_formattable);
     context.subscriptions.push(disposable_tableaddcolumnright);
+    context.subscriptions.push(disposable_tableaddcolumnleft);
+    context.subscriptions.push(disposable_tableaddrowabove);
+    context.subscriptions.push(disposable_tableaddrowbelow);
 }
 
 // this method is called when your extension is deactivated
@@ -943,11 +946,18 @@ class Table {
         for(let i = 0; i < this.columnWidths.length; i++) { this.columnWidths[i] = 0; }
         
         // determine column widths
-        for(let i = 0; i < nNumberOfColumns; i++) {
-            for(let j = 0; j < this.cells.length; j++) {
-                if(this.cells[j][i].length > this.columnWidths[i]) { 
-                    this.columnWidths[i] = this.cells[j][i].length; 
+        for(let i = 0; i < this.lines.length; i++) {
+            for(let j = 0; j < this.cells[i].length; j++) {
+                if(this.cells[i][j].length > this.columnWidths[j]) {
+                    this.columnWidths[j] = this.cells[i][j].length;
                 }
+            }
+        }
+
+        // add empty cells if lines are uneven
+        for(let i = 0; i < this.lines.length; i++) {
+            for(let j = this.cells[i].length; j < nNumberOfColumns; j++) {
+                this.cells[i].push("");
             }
         }
 
@@ -982,10 +992,6 @@ class Table {
                     }
                     this.lines.splice(1, 0, txtDashLine);
                 }
-                
-                // if(!IsEmptyCell(this.cells[i][0]) && !IsEmptyCell(this.cells[i][this.cells[i].length - 1])) {
-                //     this.lines[i] = this.lines[i].trim();
-                // }
             }
         }
 
@@ -1038,6 +1044,16 @@ class Table {
     }
     AddRowAbove(row_index: number) {
         // can assume formatted table
+        let insert_cells: string[] = [];
+        let padChar: string = " ";
+        if(row_index - 1 >= 0 && IsDashLine(this.lines[row_index - 1])) { row_index--; }
+        for(let j = 0; j < this.cells[row_index].length; j++) {
+            insert_cells[j] = padChar;
+        }
+        // insert dummy line (for format processing)        
+        this.lines.splice(row_index, 0, " ");
+        this.cells.splice(row_index, 0, insert_cells);
+        this.FormatString();
     }
 }
 function IsEmptyCell(txt: string) {
