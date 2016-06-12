@@ -2,21 +2,25 @@
 
 Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to highlighted text
 
-| Formatting                 | Keyboard Shortcut |
-|----------------------------|-------------------|
-| Toggle bold                | Ctrl+B            |
-| Toggle italics             | Ctrl+I            |
-| Toggle strikethrough       | Alt+S             |
-| Toggle code inline         | Ctrl+`            |
-| Toggle code block          | Ctrl+Shift+`      |
-| Toggle blockquote          | Ctrl+Shift+Q      |
-| ToUpper                    | Ctrl+Shift+U      |
-| ToLower                    | Ctrl+Shift+L      |
-| Convert to unordered list  | Ctrl+L, Ctrl+U    |
-| Convert to ordered list    | Ctrl+L, Ctrl+O    |
-| Convert to link template   | Alt+L             | 
-| Convert to image template  | Alt+I             |
-| Format table               | Ctrl+Shift+T      |
+| Formatting                         | Keyboard Shortcut          |
+|------------------------------------|----------------------------|
+| Toggle bold                        | Ctrl+B                     |
+| Toggle italics                     | Ctrl+I                     |
+| Toggle strikethrough               | Alt+S                      |
+| Toggle code inline                 | Ctrl+`                     |
+| Toggle code block                  | Ctrl+Shift+`               |
+| Toggle blockquote                  | Ctrl+Shift+Q               |
+| ToUpper                            | Ctrl+Shift+U               |
+| ToLower                            | Ctrl+Shift+L               |
+| Convert to unordered list          | Ctrl+L, Ctrl+U             |
+| Convert to ordered list            | Ctrl+L, Ctrl+O             |
+| Convert to link template           | Alt+L                      | 
+| Convert to image template          | Alt+I                      |
+| Format GFM table                   | Ctrl+Shift+T, Ctrl+Shift+F |
+| GFM Table: Add column to the left  | Ctrl+Shift+T, Ctrl+Shift+L |
+| GFM Table: Add column to the right | Ctrl+Shift+T, Ctrl+Shift+R |
+| GFM Table: Add row above           | Ctrl+Shift+T, Ctrl+Shift+A |
+| GFM Table: Add row below           | Ctrl+Shift+T, Ctrl+Shift+B |
 
 ## Notes
 - acts on current word when nothing is selected
@@ -27,5 +31,6 @@ Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown form
 - formatting is often overwritten during toggles (bold favors \*\*; italics favor \_)
 - converting to list strips any pre-existing list formatting 
 - the blockquote toggling algorithm isn't particularly smart
-- table formatting resizes table columns based on the largest string in that column
+- GFM table formatting resizes table columns based on the largest string in that column
  - also removes extraneous dash lines and adds a dash line if one is not already in the correct position
+ - also tries to smartly work around dash lines when adding rows; consequently, trying to add a row above the dash line results in adding a row below the dash line
