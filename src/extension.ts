@@ -234,6 +234,28 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
     
+    let disposable_tabledeleterow = vscode.commands.registerCommand('extension.tabledeleterow', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                TableDeleteRow(d, edit, s[x]);  
+            }
+        });
+    });
+
+    let disposable_tabledeletecolumn = vscode.commands.registerCommand('extension.tabledeletecolumn', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                TableDeleteColumn(d, edit, s[x]);  
+            }
+        });
+    });
+
     //context.subscriptions.push(disposable_debugpeek);
     context.subscriptions.push(disposable_togglebold);
     context.subscriptions.push(disposable_toggleitalics);
@@ -251,6 +273,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(disposable_tableaddcolumnleft);
     context.subscriptions.push(disposable_tableaddrowabove);
     context.subscriptions.push(disposable_tableaddrowbelow);
+    context.subscriptions.push(disposable_tabledeleterow);
+    context.subscriptions.push(disposable_tabledeletecolumn);
 }
 
 // this method is called when your extension is deactivated
@@ -630,6 +654,18 @@ function TableAddRowBelow(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
         table.AddRowBelow(row);
         let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
         e.replace(s, txtReplace);    
+    }
+}
+
+function TableDeleteRow(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }    
+    if(s.isEmpty) {
+    }
+}
+
+function TableDeleteColumn(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }    
+    if(s.isEmpty) {
     }
 }
 

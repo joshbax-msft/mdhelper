@@ -27,7 +27,9 @@
         "onCommand:extension.tableaddcolumnright",
         "onCommand:extension.tableaddcolumnleft",
         "onCommand:extension.tableaddrowabove",
-        "onCommand:extension.tableaddrowbelow"
+        "onCommand:extension.tableaddrowbelow",
+        "onCommand:extension.tabledeleterow",
+        "onCommand:extension.tabledeletecolumn"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -48,7 +50,9 @@
             { "command": "extension.tableaddcolumnright", "title": "Markdown: Add table column to the right" },
             { "command": "extension.tableaddcolumnleft", "title": "Markdown: Add table column to the left" },
             { "command": "extension.tableaddrowabove", "title": "Markdown: Add table row above" },
-            { "command": "extension.tableaddrowbelow", "title": "Markdown: Add table row below" }
+            { "command": "extension.tableaddrowbelow", "title": "Markdown: Add table row below" },
+            { "command": "extension.tabledeleterow", "title": "Markdown: Delete table row" },
+            { "command": "extension.tabledeletecolumn", "title": "Markdown: Delete table column" }
         ],
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
@@ -67,7 +71,9 @@
             { "command": "extension.tableaddcolumnright", "key": "ctrl+shift+t ctrl+shift+r", "when": "editorTextFocus" },
             { "command": "extension.tableaddcolumnleft", "key": "ctrl+shift+t ctrl+shift+l", "when": "editorTextFocus" },
             { "command": "extension.tableaddrowabove", "key": "ctrl+shift+t ctrl+shift+a", "when": "editorTextFocus" },
-            { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+t ctrl+shift+b", "when": "editorTextFocus" }
+            { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+t ctrl+shift+b", "when": "editorTextFocus" },
+            { "command": "extension.tabledeleterow", "key": "ctrl+shift+d ctrl+shift+r", "when": "editorTextFocus" },
+            { "command": "extension.tabledeletecolumn", "key": "ctrl+shift+d ctrl+shift+c", "when": "editorTextFocus" }
         ]
     },
     "scripts": {
