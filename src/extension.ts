@@ -952,6 +952,14 @@ function GetTableRow(d: vscode.TextDocument, s: vscode.Selection) {
     return row;
 }
 
+function StripSurroundingPipes(txt: string) {
+    let txtReturn: string = txt;
+    if(txtReturn.startsWith("|") && txtReturn.endsWith("|")) {
+        txtReturn = txtReturn.substring(1, txtReturn.length - 1).trim();
+    }
+    return txtReturn;
+}
+
 class Table {
     columnWidths: number[];
     cells: string[][];
@@ -967,10 +975,11 @@ class Table {
         this.lines = txt.split("\r\n");
         this.cells = [];
 
-        let nNumberOfColumns: number = 0;
+        let nNumberOfColumns: number = 0; 
 
         // split and trim into cells, and determine number of columns
         for(let i = 0; i < this.lines.length; i++) {
+            this.lines[i] = StripSurroundingPipes(this.lines[i]);
             this.cells[i] = [];
             this.cells[i] = this.lines[i].split("|");
             for(let j = 0; j < this.cells[i].length; j++) { this.cells[i][j] = this.cells[i][j].trim(); }
@@ -1016,6 +1025,7 @@ class Table {
                 }
                 if(this.lines[i].length > 0) {
                     this.lines[i] = this.lines[i].substring(1, this.lines[i].length - 2);
+                    this.lines[i] = "| " + this.lines[i] + " |";
                 }
                 if(i == 1 && !IsDashLine(this.lines[i])) {
                     // add a dash line
@@ -1025,6 +1035,7 @@ class Table {
                     } 
                     if(txtDashLine.length > 0) {
                         txtDashLine = txtDashLine.substring(1, txtDashLine.length - 2);
+                        txtDashLine = "| " + txtDashLine + " |";
                     }
                     this.lines.splice(1, 0, txtDashLine);
                 }
