@@ -2,7 +2,7 @@
     "name": "mdhelper",
     "displayName": "mdhelper",
     "description": "mdhelper",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.0.0"
