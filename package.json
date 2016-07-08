@@ -2,35 +2,15 @@
     "name": "mdhelper",
     "displayName": "Markdown helper",
     "description": "Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to text",
-    "version": "0.0.6",
+    "version": "0.0.7",
     "publisher": "joshbax",
     "engines": {
-        "vscode": "^1.0.0"
+        "vscode": "^1.3.0"
     },
     "categories": [
         "Other"
     ],
-    "activationEvents": [
-        "onCommand:extension.togglebold",
-        "onCommand:extension.toggleitalics",
-        "onCommand:extension.togglestrikethrough",
-        "onCommand:extension.togglecodeinline",
-        "onCommand:extension.togglecodeblock",
-        "onCommand:extension.toupper",
-        "onCommand:extension.tolower",
-        "onCommand:extension.tounorderedlist",
-        "onCommand:extension.toorderedlist",
-        "onCommand:extension.tolink",
-        "onCommand:extension.toimagelink",
-        "onCommand:extension.toggleblockquote",
-        "onCommand:extension.formattable",
-        "onCommand:extension.tableaddcolumnright",
-        "onCommand:extension.tableaddcolumnleft",
-        "onCommand:extension.tableaddrowabove",
-        "onCommand:extension.tableaddrowbelow",
-        "onCommand:extension.tabledeleterow",
-        "onCommand:extension.tabledeletecolumn"
-    ],
+    "activationEvents": [ "onLanguage:markdown" ],
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
@@ -74,7 +54,30 @@
             { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+t ctrl+shift+b", "when": "editorTextFocus" },
             { "command": "extension.tabledeleterow", "key": "ctrl+shift+d ctrl+shift+r", "when": "editorTextFocus" },
             { "command": "extension.tabledeletecolumn", "key": "ctrl+shift+d ctrl+shift+c", "when": "editorTextFocus" }
-        ]
+        ],
+        "menus": {
+            "editor/context": [
+                { "when": "resourceLangId == markdown", "command": "extension.togglebold", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.toggleitalics", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.togglestrikethrough", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.togglecodeinline", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.togglecodeblock", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.toupper", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tolower", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tounorderedlist", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.toorderedlist", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tolink", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.toimagelink", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.toggleblockquote", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.formattable", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tableaddcolumnright", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tableaddcolumnleft", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tableaddrowabove", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tableaddrowbelow", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tabledeleterow", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tabledeletecolumn", "group": "markdown" }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
@@ -83,6 +86,6 @@
     },
     "devDependencies": {
         "typescript": "^1.8.5",
-        "vscode": "^0.11.0"
+        "vscode": "^1.3.0"
     }
 }
