@@ -2,7 +2,7 @@
     "name": "mdhelper",
     "displayName": "Markdown helper",
     "description": "Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to text",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.0.0"
