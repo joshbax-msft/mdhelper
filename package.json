@@ -1,8 +1,8 @@
 {
     "name": "mdhelper",
     "displayName": "Markdown helper",
-    "description": "Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to text",
-    "version": "0.0.7",
+    "description": "Apply Markdown formatting to text (keyboard shortcuts, context menu).",
+    "version": "0.0.8",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.3.0"
@@ -73,9 +73,7 @@
                 { "when": "resourceLangId == markdown", "command": "extension.tableaddcolumnright", "group": "markdown" },
                 { "when": "resourceLangId == markdown", "command": "extension.tableaddcolumnleft", "group": "markdown" },
                 { "when": "resourceLangId == markdown", "command": "extension.tableaddrowabove", "group": "markdown" },
-                { "when": "resourceLangId == markdown", "command": "extension.tableaddrowbelow", "group": "markdown" },
-                { "when": "resourceLangId == markdown", "command": "extension.tabledeleterow", "group": "markdown" },
-                { "when": "resourceLangId == markdown", "command": "extension.tabledeletecolumn", "group": "markdown" }
+                { "when": "resourceLangId == markdown", "command": "extension.tableaddrowbelow", "group": "markdown" }
             ]
         }
     },

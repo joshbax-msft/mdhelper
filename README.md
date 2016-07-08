@@ -1,6 +1,6 @@
 # Basic Markdown helper
 
-Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to text
+Apply Markdown formatting to text (keyboard shortcuts, context menu)
 
 | Formatting                         | Keyboard Shortcut          |
 |------------------------------------|----------------------------|
@@ -34,3 +34,4 @@ Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown form
 - GFM table formatting resizes table columns based on the largest string in that column
  - also removes extraneous dash lines and adds a dash line if one is not already in the correct position
  - also tries to smartly work around dash lines when adding rows; consequently, trying to add a row above the dash line results in adding a row below the dash line
+- context menu support
