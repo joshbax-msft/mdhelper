@@ -33,7 +33,6 @@
             { "command": "extension.tableaddrowbelow", "title": "Markdown: Add table row below" },
             { "command": "extension.tabledeleterow", "title": "Markdown: Delete table row" },
             { "command": "extension.tabledeletecolumn", "title": "Markdown: Delete table column" }
-            // { "command": "extension.debugpeek", "title": "DEBUG PEEK -5" }
         ],
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
@@ -55,7 +54,6 @@
             { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+t ctrl+shift+b", "when": "editorTextFocus" },
             { "command": "extension.tabledeleterow", "key": "ctrl+shift+d ctrl+shift+r", "when": "editorTextFocus" },
             { "command": "extension.tabledeletecolumn", "key": "ctrl+shift+d ctrl+shift+c", "when": "editorTextFocus" }
-            // { "command": "extension.debugpeek", "key": "ctrl+shift+p", "when": "editorTextFocus" }
         ],
         "menus": {
             "editor/context": [
