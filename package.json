@@ -1,7 +1,7 @@
 {
     "name": "mdhelper",
-    "displayName": "mdhelper",
-    "description": "mdhelper",
+    "displayName": "Markdown helper",
+    "description": "Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to text",
     "version": "0.0.5",
     "publisher": "joshbax",
     "engines": {

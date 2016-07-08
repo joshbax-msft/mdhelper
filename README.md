@@ -1,6 +1,6 @@
 # Basic Markdown helper
 
-Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to highlighted text
+Leverages (and occasionally overrides) keyboard shortcuts to apply Markdown formatting to text
 
 | Formatting                         | Keyboard Shortcut          |
 |------------------------------------|----------------------------|
