@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
     //     let d: vscode.TextDocument = e.document;
     //     let s: vscode.Selection = e.selection;
     //     // add debug output to Peek before enabling
-    //     e.edit(function (edit) { Peek(d, s, 5); });
+    //     e.edit(function (edit) { Peek(d, s, -5); });
     // });
 
 
@@ -256,7 +256,6 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    //context.subscriptions.push(disposable_debugpeek);
     context.subscriptions.push(disposable_togglebold);
     context.subscriptions.push(disposable_toggleitalics);
     context.subscriptions.push(disposable_togglestrikethrough);
@@ -383,6 +382,7 @@ function ToggleBlockquote(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
 function ToggleBold(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }
     if(s.isEmpty) { s = SelectWord(d, s); }
+    s = GetSurroundingFormatting(d, s);
     
     let txt: string = d.getText(new vscode.Range(s.start, s.end));
     let txtTrimmed: string = txt.trim();
@@ -426,6 +426,7 @@ function ToggleBoldList(txtList: string) {
 function ToggleItalics(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }
     if(s.isEmpty) { s = SelectWord(d, s); }
+    s = GetSurroundingFormatting(d, s);
 
     let txt: string = d.getText(new vscode.Range(s.start, s.end));
     let txtTrimmed: string = txt.trim();
@@ -660,12 +661,38 @@ function TableAddRowBelow(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: v
 function TableDeleteRow(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }    
     if(s.isEmpty) {
+        let row: number = GetTableRow(d, s);
+        
+        s = SelectTable(d, s);
+        if(s == null) { return; }
+        
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
+
+        let table: Table = new Table(txtTrimmed);
+        table.DeleteRow(row);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);  
     }
 }
 
 function TableDeleteColumn(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
     if(d.getText().length == 0) { return; }    
     if(s.isEmpty) {
+        let column: number = GetTableColumn(d, s);
+        
+        s = SelectTable(d, s);
+        if(s == null) { return; }
+        
+        let txt: string = d.getText(new vscode.Range(s.start, s.end));
+        let txtTrimmed: string = txt.trim();
+        if(!IsTable(txtTrimmed)) { return; }
+
+        let table: Table = new Table(txtTrimmed);
+        table.DeleteColumn(column);
+        let txtReplace: string = txt.replace(txtTrimmed, table.ToString());
+        e.replace(s, txtReplace);  
     }
 }
 
@@ -878,16 +905,6 @@ function IsDashLine(txt: string) {
         if(txt[i] != "-" && txt[i] != "|" && txt[i] != " ") { return false; }
     }
     return true;
-}
-function SelectAndParseTable(d: vscode.TextDocument, s: vscode.Selection) {
-    let txtLines: string[] = [];
-    let txtLine: string = d.lineAt(s.active.line).text;
-    txtLines[0] = txtLine;
-    
-    let column: number = GetTableColumn(d, s);
-    let row: number = GetTableRow(d, s);
-    vscode.window.showInformationMessage("Row: " + row.toString() + " Column: " + column.toString());
-    s = new vscode.Selection(s.active.line, 0, s.active.line, txtLine.length);    
 }
 
 function SelectTable(d: vscode.TextDocument, s: vscode.Selection) {
@@ -1102,6 +1119,17 @@ class Table {
         this.cells.splice(row_index, 0, insert_cells);
         this.FormatString();
     }
+    DeleteRow(row_index: number) {
+        this.lines.splice(row_index, 1);
+        this.cells.splice(row_index, 1);
+        this.FormatString();
+    }
+    DeleteColumn(column_index: number) {
+        for(let i = 0; i < this.cells.length; i++) {
+            this.cells[i].splice(column_index, 1);
+        }
+        this.FormatString();
+    }
 }
 function IsEmptyCell(txt: string) {
     for(let i = 0; i < txt.length; i++) {
@@ -1111,15 +1139,36 @@ function IsEmptyCell(txt: string) {
 }
 // miscellaneous/utility
 function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
-    // returns a substring of the document text equal to n characters after the selection (TODO: or before, if n is negative)
+    // returns a substring of the document text equal to n characters after the selection (or before, if n is negative)
     // includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
-    if(n <= 0) { return; }
-    else if(n > 0) {
-        // look ahead
-        let nCurrentLineIndex: number = s.end.line;
-        let txtReturn: string = "";
-        let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
-        
+    if(n == 0) { return; }
+    let nCurrentLineIndex: number = s.end.line;
+    let txtReturn: string = "";
+    let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
+
+    if(n < 0) {
+        // look back
+        if(s.start.character + n < 0) {
+            txtReturn += txtCurrentLine.substring(0, s.start.character);
+            txtReturn = "\n" + txtReturn; if(txtReturn.length < -n) { txtReturn = "\r" + txtReturn; }
+            while(txtReturn.length < -n && --nCurrentLineIndex >= 0) {
+                txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
+                let nNeededCharacters: number = -n - txtReturn.length;
+                if(txtCurrentLine.length < nNeededCharacters) {
+                    txtReturn = "\n" + txtCurrentLine + txtReturn;
+                    if(txtReturn.length < -n) { txtReturn = "\r" + txtReturn; }
+                }
+                else {
+                    txtReturn = txtCurrentLine.substring(txtCurrentLine.length - nNeededCharacters) + txtReturn;
+                }
+            }
+        }
+        else {
+            txtReturn = txtCurrentLine.substring(s.start.character + n, s.start.character);
+        }            
+    }
+    else {
+        // look ahead        
         if(s.end.character + n > txtCurrentLine.length) {
             // add the rest of the current line to txtReturn
             txtReturn += txtCurrentLine.substring(s.end.character);
@@ -1129,8 +1178,7 @@ function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
                 let nNeededCharacters: number = n - txtReturn.length;
                 if(txtCurrentLine.length < nNeededCharacters) {
                     txtReturn += txtCurrentLine;
-                    txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
-                    
+                    txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }                        
                 }
                 else {
                     txtReturn += txtCurrentLine.substring(0, nNeededCharacters);
@@ -1140,9 +1188,9 @@ function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
         else {            
             txtReturn = txtCurrentLine.substring(s.end.character, s.end.character + n); 
         }
-        
-        return txtReturn;        
     }
+
+    return txtReturn;
 }
 
 function TrimSingles(txt: string, char: string) {
@@ -1179,4 +1227,34 @@ function SelectWord(d: vscode.TextDocument, s: vscode.Selection) {
 function SelectLines(d: vscode.TextDocument, s: vscode.Selection) {
     let nLastLineLength: number = d.lineAt(s.end.line).text.length;
     return new vscode.Selection(s.start.line, 0, s.end.line, nLastLineLength);
+}
+function GetSurroundingFormatting(d: vscode.TextDocument, s: vscode.Selection) {
+    let txt: string = d.getText(new vscode.Range(s.start, s.end));
+    let preceding3: string = Peek(d, s, -3);
+    let following3: string = Peek(d, s, 3);
+
+    if((preceding3 == "**_" && following3 == "_**")
+        || (preceding3 == "__*" && following3 == "*__")
+    	|| (preceding3 == "_**" && following3 == "**_")
+    	|| (preceding3 == "*__" && following3 == "__*")) {
+            return new vscode.Selection(s.start.line, s.start.character - 3, s.end.line, s.end.character + 3);
+        }
+
+    let preceding2: string = Peek(d, s, -2);
+    let following2: string = Peek(d, s, 2);
+    
+    if((preceding2 == "**" && following2 == "**")
+        || (preceding2 == "__" && following2 == "__")) {
+            return new vscode.Selection(s.start.line, s.start.character - 2, s.end.line, s.end.character + 2);
+        }
+
+    let preceding1: string = Peek(d, s, -1);
+    let following1: string = Peek(d, s, 1);
+
+    if((preceding1 == "*" && following1 == "*")
+        || (preceding1 == "_" && following1 == "_")) {
+            return new vscode.Selection(s.start.line, s.start.character - 1, s.end.line, s.end.character + 1);
+        }
+    
+    return s;
 }

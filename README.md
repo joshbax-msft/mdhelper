@@ -2,6 +2,8 @@
 
 Apply Markdown formatting to text (keyboard shortcuts, context menu)
 
+Note: context menu support is new with VS Code version 1.3.0; it seems to work only in folder view and only after switching to a Markdown file (i.e. opening VS Code to a Markdown file doesn't properly add the menu items)
+
 | Formatting                         | Keyboard Shortcut          |
 |------------------------------------|----------------------------|
 | Toggle bold                        | Ctrl+B                     |
@@ -21,6 +23,8 @@ Apply Markdown formatting to text (keyboard shortcuts, context menu)
 | GFM Table: Add column to the right | Ctrl+Shift+T, Ctrl+Shift+R |
 | GFM Table: Add row above           | Ctrl+Shift+T, Ctrl+Shift+A |
 | GFM Table: Add row below           | Ctrl+Shift+T, Ctrl+Shift+B |
+| GFM Table: Delete row              | Ctrl+Shift+D, Ctrl+Shift+R |
+| GFM Table: Delete column           | Ctrl+Shift+D, Ctrl+Shift+C |
 
 ## Notes
 - acts on current word when nothing is selected
@@ -34,4 +38,4 @@ Apply Markdown formatting to text (keyboard shortcuts, context menu)
 - GFM table formatting resizes table columns based on the largest string in that column
  - also removes extraneous dash lines and adds a dash line if one is not already in the correct position
  - also tries to smartly work around dash lines when adding rows; consequently, trying to add a row above the dash line results in adding a row below the dash line
-- context menu support
+- limited context menu support (see note at the top of the README)

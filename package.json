@@ -2,7 +2,7 @@
     "name": "mdhelper",
     "displayName": "Markdown helper",
     "description": "Apply Markdown formatting to text (keyboard shortcuts, context menu).",
-    "version": "0.0.8",
+    "version": "0.0.9",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.3.0"
@@ -33,6 +33,7 @@
             { "command": "extension.tableaddrowbelow", "title": "Markdown: Add table row below" },
             { "command": "extension.tabledeleterow", "title": "Markdown: Delete table row" },
             { "command": "extension.tabledeletecolumn", "title": "Markdown: Delete table column" }
+            // { "command": "extension.debugpeek", "title": "DEBUG PEEK -5" }
         ],
         "keybindings": [
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus" },
@@ -54,6 +55,7 @@
             { "command": "extension.tableaddrowbelow", "key": "ctrl+shift+t ctrl+shift+b", "when": "editorTextFocus" },
             { "command": "extension.tabledeleterow", "key": "ctrl+shift+d ctrl+shift+r", "when": "editorTextFocus" },
             { "command": "extension.tabledeletecolumn", "key": "ctrl+shift+d ctrl+shift+c", "when": "editorTextFocus" }
+            // { "command": "extension.debugpeek", "key": "ctrl+shift+p", "when": "editorTextFocus" }
         ],
         "menus": {
             "editor/context": [
@@ -73,7 +75,9 @@
                 { "when": "resourceLangId == markdown", "command": "extension.tableaddcolumnright", "group": "markdown" },
                 { "when": "resourceLangId == markdown", "command": "extension.tableaddcolumnleft", "group": "markdown" },
                 { "when": "resourceLangId == markdown", "command": "extension.tableaddrowabove", "group": "markdown" },
-                { "when": "resourceLangId == markdown", "command": "extension.tableaddrowbelow", "group": "markdown" }
+                { "when": "resourceLangId == markdown", "command": "extension.tableaddrowbelow", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tabledeleterow", "group": "markdown" },
+                { "when": "resourceLangId == markdown", "command": "extension.tabledeletecolumn", "group": "markdown" }
             ]
         }
     },
