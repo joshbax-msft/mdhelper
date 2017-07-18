@@ -2,15 +2,13 @@
 
 Apply Markdown formatting to text (keyboard shortcuts, context menu)
 
-Note: context menu support is new with VS Code version 1.3.0; it seems to work only in folder view and only after switching to a Markdown file (i.e. opening VS Code to a Markdown file doesn't properly add the menu items)
-
 | Formatting                         | Keyboard Shortcut          |
 |------------------------------------|----------------------------|
 | Toggle bold                        | Ctrl+B                     |
 | Toggle italics                     | Ctrl+I                     |
 | Toggle strikethrough               | Alt+S                      |
-| Toggle code inline                 | Ctrl+`                     |
-| Toggle code block                  | Ctrl+Shift+`               |
+| Toggle code inline                 | Alt+\`                     |
+| Toggle code block                  | Alt+Shift+\`               |
 | Toggle blockquote                  | Ctrl+Shift+Q               |
 | ToUpper                            | Ctrl+Shift+U               |
 | ToLower                            | Ctrl+Shift+L               |
