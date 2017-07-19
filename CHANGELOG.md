@@ -1,4 +1,10 @@
-# 0.0.10
+# 0.0.11
+
+- Fixed table formatting bug; should correctly format tables now regardless of line ending
+
+## Older versions
+
+### 0.0.10
 
 - Keyboard shortcut for inline code has changed
   - **Old:** Ctrl+\`
