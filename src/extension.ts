@@ -708,7 +708,8 @@ function ConvertCodeBlock(txt: string) {
     else { return txt; }
 }
 function AddCodeBlock(txt: string) { 
-    return "```" + vscode.EndOfLine + txt + vscode.EndOfLine + "```"; 
+    let lineEnding: string = <string>vscode.workspace.getConfiguration("files").get("eol");
+    return "```" + lineEnding + txt + lineEnding + "```"; 
 }
 function RemoveCodeBlock(txt: string) {
     if(IsCodeBlock(txt)) {
@@ -1142,7 +1143,6 @@ function IsEmptyCell(txt: string) {
 // miscellaneous/utility
 function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
     // returns a substring of the document text equal to n characters after the selection (or before, if n is negative)
-    // includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
     if(n == 0) { return; }
 
     let nCurrentLineIndex: number = s.end.line;
