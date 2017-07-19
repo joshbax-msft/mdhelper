@@ -25,9 +25,8 @@ export function activate(context: vscode.ExtensionContext) {
     //     let d: vscode.TextDocument = e.document;
     //     let s: vscode.Selection = e.selection;
     //     // add debug output to Peek before enabling
-    //     e.edit(function (edit) { Peek(d, s, -5); });
+    //     e.edit(function (edit) { Peek(d, s, 10); });
     // });
-
 
     let disposable_togglebold = vscode.commands.registerCommand('extension.togglebold', () => {
         let e: vscode.TextEditor = vscode.window.activeTextEditor;
@@ -703,12 +702,14 @@ function TableDeleteColumn(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: 
 /////////////////////////////////////
 
 // code block
-function IsCodeBlock(txt: string) { return txt.startsWith("```\r\n") && txt.endsWith("\r\n```"); }
+function IsCodeBlock(txt: string) { return (txt.startsWith("```\r\n") && txt.endsWith("\r\n```")) || (txt.startsWith("```\n") && txt.endsWith("\n```")); }
 function ConvertCodeBlock(txt: string) {
     if(IsCodeBlock(txt)) { return AddCodeBlock(RemoveCodeBlock(txt)); }
     else { return txt; }
 }
-function AddCodeBlock(txt: string) { return "```\r\n" + txt + "\r\n```"; }
+function AddCodeBlock(txt: string) { 
+    return "```" + vscode.EndOfLine + txt + vscode.EndOfLine + "```"; 
+}
 function RemoveCodeBlock(txt: string) {
     if(IsCodeBlock(txt)) {
         let txtStrippedFirstLine: string = txt.substring(txt.indexOf("\n") + 1);
@@ -984,12 +985,13 @@ class Table {
     formattedString: string;
     cursorX: number;
     cursorY: number;
-
+    
     constructor(txt: string, _cursorX?: number, _cursorY?: number) {
         this.cursorX = _cursorX == null ? -1 : _cursorX;
         this.cursorY = _cursorY == null ? -1 : _cursorY;
 
-        this.lines = txt.split("\r\n");
+        let lineEnding: string = <string>vscode.workspace.getConfiguration("files").get("eol");
+        this.lines = txt.split(lineEnding);
         this.cells = [];
 
         let nNumberOfColumns: number = 0; 
@@ -1059,7 +1061,7 @@ class Table {
             }
         }
 
-        this.formattedString = this.lines.join("\r\n");
+        this.formattedString = this.lines.join(<string>vscode.workspace.getConfiguration("files").get("eol"));
     }
     AddColumnRight(column_index: number) {
         // can assume formatted table
@@ -1142,21 +1144,23 @@ function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
     // returns a substring of the document text equal to n characters after the selection (or before, if n is negative)
     // includes \r\n, but this is hard-coded, so it's not accurate for UNIX-style line endings
     if(n == 0) { return; }
+
     let nCurrentLineIndex: number = s.end.line;
     let txtReturn: string = "";
     let txtCurrentLine: string = d.lineAt(nCurrentLineIndex).text;
+    let lineEnding: string = <string>vscode.workspace.getConfiguration("files").get("eol");
 
     if(n < 0) {
         // look back
         if(s.start.character + n < 0) {
             txtReturn += txtCurrentLine.substring(0, s.start.character);
-            txtReturn = "\n" + txtReturn; if(txtReturn.length < -n) { txtReturn = "\r" + txtReturn; }
+            txtReturn = "\n" + txtReturn; if(txtReturn.length < -n && lineEnding == "\r\n") { txtReturn = "\r" + txtReturn; }
             while(txtReturn.length < -n && --nCurrentLineIndex >= 0) {
                 txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
                 let nNeededCharacters: number = -n - txtReturn.length;
                 if(txtCurrentLine.length < nNeededCharacters) {
                     txtReturn = "\n" + txtCurrentLine + txtReturn;
-                    if(txtReturn.length < -n) { txtReturn = "\r" + txtReturn; }
+                    if(txtReturn.length < -n && lineEnding == "\r\n") { txtReturn = "\r" + txtReturn; }
                 }
                 else {
                     txtReturn = txtCurrentLine.substring(txtCurrentLine.length - nNeededCharacters) + txtReturn;
@@ -1172,13 +1176,25 @@ function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
         if(s.end.character + n > txtCurrentLine.length) {
             // add the rest of the current line to txtReturn
             txtReturn += txtCurrentLine.substring(s.end.character);
-            txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
+            // add line ending; don't add both \r and \n unless n parameter is large enough
+            if(lineEnding == "\r\n") {
+                txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
+            }
+            else {
+                txtReturn += "\n";
+            }
+            // drop to next line and repeat until we've grabbed enough characters (or end of document)
             while(txtReturn.length < n && ++nCurrentLineIndex < d.lineCount - 1) {
                 txtCurrentLine = d.lineAt(nCurrentLineIndex).text;
                 let nNeededCharacters: number = n - txtReturn.length;
                 if(txtCurrentLine.length < nNeededCharacters) {
                     txtReturn += txtCurrentLine;
-                    txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }                        
+                    if(lineEnding == "\r\n") {
+                        txtReturn += "\r"; if(txtReturn.length < n) { txtReturn += "\n"; }
+                    }
+                    else {
+                        txtReturn += "\n";
+                    }
                 }
                 else {
                     txtReturn += txtCurrentLine.substring(0, nNeededCharacters);
@@ -1190,6 +1206,7 @@ function Peek(d: vscode.TextDocument, s: vscode.Selection, n: number) {
         }
     }
 
+    // vscode.window.showInformationMessage("Peek (" + n.toString() + "): " + txtReturn.split(' ').join("<s>").split('\r').join("\\r").split('\n').join("\\n"));
     return txtReturn;
 }
 

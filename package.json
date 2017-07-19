@@ -2,7 +2,7 @@
     "name": "mdhelper",
     "displayName": "Markdown helper",
     "description": "Apply Markdown formatting to text (keyboard shortcuts, context menu).",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "publisher": "joshbax",
     "engines": {
         "vscode": "^1.3.0"
@@ -34,7 +34,7 @@
             { "command": "extension.tabledeleterow", "title": "Markdown: Delete table row" },
             { "command": "extension.tabledeletecolumn", "title": "Markdown: Delete table column" }
         ],
-        "keybindings": [
+        "keybindings": [            
             { "command": "extension.togglebold", "key": "ctrl+b", "when": "editorTextFocus && editorLangId == 'markdown'" },
             { "command": "extension.toggleitalics", "key": "ctrl+i", "when": "editorTextFocus && editorLangId == 'markdown'" },
             { "command": "extension.togglestrikethrough", "key": "alt+s", "when": "editorTextFocus && editorLangId == 'markdown'" },
