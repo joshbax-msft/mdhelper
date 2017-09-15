@@ -36,4 +36,4 @@ Apply Markdown formatting to text (keyboard shortcuts, context menu)
 - GFM table formatting resizes table columns based on the largest string in that column
  - also removes extraneous dash lines and adds a dash line if one is not already in the correct position
  - also tries to smartly work around dash lines when adding rows; consequently, trying to add a row above the dash line results in adding a row below the dash line
-- limited context menu support (see note at the top of the README)
+- context menu support
