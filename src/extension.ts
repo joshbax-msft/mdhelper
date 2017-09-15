@@ -11,6 +11,24 @@ let global_expression_link: RegExp = new RegExp("\\[.*?\\]\\(.*?\\)");
 let global_expression_image = new RegExp("!\\[.*?\\]\\(.*?\\)");
 let global_expression_code_block_line: RegExp = new RegExp("^[```|~~~].*");
 let global_expression_blockquote: RegExp = new RegExp("^(>\\s)+");
+let global_expression_line_ending: RegExp = new RegExp("\\r?\\n|\\r", "g");
+
+let global_expression_html_bold: RegExp = new RegExp("<b>(.*?)<\/b>", "g");
+let global_expression_html_italics: RegExp = new RegExp("<i>(.*?)<\/i>", "g");
+let global_expression_html_first_table: RegExp = new RegExp("([\\s\\S]*?)<table>([\\s\\S]*?)<\/table>([\\s\\S]*)");
+let global_expression_html_tr: RegExp = new RegExp("<tr.*?>([\\s\\S]*?)<\/tr>", "g");
+let global_expression_html_th: RegExp = new RegExp("<th>([\\s\\S]*?)<\/th>", "g");
+let global_expression_html_td: RegExp = new RegExp("<td>([\\s\\S]*?)<\/td>", "g");
+let global_expression_html_first_ol: RegExp = new RegExp("([\\s\\S]*?)<ol>([\\s\\S]*?)<\/ol>([\\s\\S]*)");
+let global_expression_html_first_ul: RegExp = new RegExp("([\\s\\S]*?)<ul>([\\s\\S]*?)<\/ul>([\\s\\S]*)");
+let global_expression_html_li: RegExp = new RegExp("<li>([\\s\\S]*?)<\/li>", "g");
+let global_expression_html_first_p: RegExp = new RegExp("([\\s\\S]*?)<p>([\\s\\S]*?)<\/p>([\\s\\S]*)");
+
+let global_expression_html_tbody_start: RegExp = new RegExp("<tbody(.*?)>");
+let global_expression_html_tbody_end: RegExp = new RegExp("</tbody>");
+let global_expression_html_thead_start: RegExp = new RegExp("<thead(.*?)>");
+let global_expression_html_thead_end: RegExp = new RegExp("</thead>");
+let global_expression_html_colgroup: RegExp = new RegExp("<colgroup.*?</colgroup>");
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -255,6 +273,18 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
+    let disposable_htmltomarkdown = vscode.commands.registerCommand('extension.htmltomarkdown', () => {
+        let e: vscode.TextEditor = vscode.window.activeTextEditor;
+        let d: vscode.TextDocument = e.document;
+        let s: vscode.Selection[] = e.selections;
+        e.edit(function (edit) { 
+            for(let x = 0; x < s.length; x++) {
+                HTMLSelectionToMarkdown(d, edit, s[x]);  
+            }
+        });
+    });
+
+    context.subscriptions.push(disposable_htmltomarkdown);
     context.subscriptions.push(disposable_togglebold);
     context.subscriptions.push(disposable_toggleitalics);
     context.subscriptions.push(disposable_togglestrikethrough);
@@ -279,20 +309,157 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
 }
 
-function ConvertToUnorderedList(txtTrimmed: string)
-{
+function HTMLSelectionToMarkdown(d: vscode.TextDocument, e: vscode.TextEditorEdit, s: vscode.Selection) {
+    if(d.getText().length == 0) { return; }
+    let txt: string = d.getText(new vscode.Range(s.start, s.end));
+    e.replace(s, HTMLFullStringToMarkdown(txt));
+}
+
+function HTMLFullStringToMarkdown(txt: string) {
+    let regex_table_result = global_expression_html_first_table.exec(txt);
+    if(regex_table_result != null) {
+        if(regex_table_result.length == 4) {
+            // 1 == pre-table (no table here)
+            // 2 == table
+            // 3 == post-table (other tables possible here)
+            return HTMLWithoutTableToMarkdown(regex_table_result[1])
+            + HTMLTableToMarkdown(regex_table_result[2])
+            + HTMLFullStringToMarkdown(regex_table_result[3]);
+        }
+        else {
+            return "error";
+        }
+    }
+    else {
+        // no tables; process simple HTML
+        return HTMLWithoutTableToMarkdown(txt);
+    }
+}
+
+function HTMLWithoutTableToMarkdown(txt: string) {
+    // after tables, check for ul
+    let regex_ul_result = global_expression_html_first_ul.exec(txt);
+    if(regex_ul_result != null) {
+        if(regex_ul_result.length == 4) {
+            // 1 == pre-ul (no ul here)
+            // 2 == ul
+            // 3 == post-ul (other ul possible here)
+            return HTMLWithoutUnorderedListToMarkdown(regex_ul_result[1])
+                 + HTMLUnorderedListToMarkdown(regex_ul_result[2])
+                 + HTMLWithoutTableToMarkdown(regex_ul_result[3]);
+        }
+        else {
+            return "error";
+        }
+    }
+    else {
+        // no ul; on to ol
+        return HTMLWithoutUnorderedListToMarkdown(txt);
+    }
+}
+
+function HTMLWithoutUnorderedListToMarkdown(txt: string) {
+    // after ul, check for ol
+    let regex_ol_result = global_expression_html_first_ol.exec(txt);
+    if(regex_ol_result != null) {
+        if(regex_ol_result.length == 4) {
+            // 1 == pre-ol (no ol here)
+            // 2 == ol
+            // 3 == post-ol (other ol possible here)
+            return HTMLWithoutOrderedListToMarkdown(regex_ol_result[1])
+                 + HTMLOrderedListToMarkdown(regex_ol_result[2])
+                 + HTMLWithoutUnorderedListToMarkdown(regex_ol_result[3]);
+        }
+        else {
+            return "error";
+        }
+    }
+    else {
+        // no ol; on to p
+        return HTMLWithoutOrderedListToMarkdown(txt);
+    }
+}
+
+function HTMLWithoutOrderedListToMarkdown(txt: string) {
+    // after ol, last check is for p
+    let lineEnding: string = <string>vscode.workspace.getConfiguration("files").get("eol");
+    let regex_p_result = global_expression_html_first_p.exec(txt);
+    if(regex_p_result != null) {
+        if(regex_p_result.length == 4) {
+            // 1 == pre-p (no p here)
+            // 2 == p
+            // 3 == post-p (other p possible here)
+            let txtReturn: string = HTMLBasicToMarkdown(regex_p_result[1]);
+            if(!regex_p_result[1].endsWith("\\n")) { txtReturn += lineEnding; }
+            txtReturn += HTMLBasicToMarkdown(regex_p_result[2])
+            if(!regex_p_result[3].startsWith("\\n") && !regex_p_result[3].startsWith("\\r")) { txtReturn += lineEnding; }
+            txtReturn += HTMLWithoutOrderedListToMarkdown(regex_p_result[3]);
+            return txtReturn;
+        }
+        else {
+            return "error";
+        }
+    }
+    else {
+        // no p; process simple HTML
+        return HTMLBasicToMarkdown(txt);
+    }
+}
+
+function HTMLBasicToMarkdown(txt: string) {
+    let txtLines: string[] = txt.split("\n");
+    for(let i = 0; i < txtLines.length; i++) {
+        txtLines[i] = txtLines[i].replace(global_expression_html_bold, "**$1**");
+        txtLines[i] = txtLines[i].replace(global_expression_html_italics, "_$1_");
+    }
+    return txtLines.join("\n");
+}
+
+function HTMLTableToMarkdown(txt: string) {
+    let lineEnding: string = <string>vscode.workspace.getConfiguration("files").get("eol");
+    let tableString: string = StripLineEndings(txt);
+    tableString = tableString.replace(global_expression_html_tbody_start, "");
+    tableString = tableString.replace(global_expression_html_tbody_end, "");
+    tableString = tableString.replace(global_expression_html_thead_start, "");
+    tableString = tableString.replace(global_expression_html_thead_end, "");
+    tableString = tableString.replace(global_expression_html_colgroup, "");
+    tableString = tableString.replace(global_expression_html_tr, "|$1" + lineEnding);
+    tableString = tableString.replace(global_expression_html_td, " $1 |");
+    tableString = tableString.replace(global_expression_html_th, " $1 |");
+    tableString = tableString.replace(global_expression_html_bold, "**$1**"); // might not process this, given possible complex cases
+    tableString = tableString.replace(global_expression_html_italics, "_$1_"); // might not process this, given possible complex cases
+    let table: Table = new Table(tableString.trim());
+    return table.ToString();
+}
+
+function HTMLOrderedListToMarkdown(txt: string) {
+    let txtReturn: string = HTMLUnorderedListToMarkdown(txt);
+    return ConvertToOrderedList(txtReturn);
+}
+
+function HTMLUnorderedListToMarkdown(txt: string) {
+    let lineEnding: string = <string>vscode.workspace.getConfiguration("files").get("eol");
+    let ulString: string = StripLineEndings(txt);
+    ulString = HTMLBasicToMarkdown(ulString.replace(global_expression_html_li, "- $1" + lineEnding));
+    return ulString.trim();
+}
+
+function StripLineEndings(txt: string) {
+    let txtStripped: string = txt;
+    txtStripped = txtStripped.replace(global_expression_line_ending, "");
+    return txtStripped;
+}
+
+function ConvertToUnorderedList(txtTrimmed: string) {
     let txtTrimmedLines: string[] = txtTrimmed.split("\n");
-    for(let i = 0; i < txtTrimmedLines.length; i++)
-    {
+    for(let i = 0; i < txtTrimmedLines.length; i++) {
         let matches: RegExpMatchArray = txtTrimmedLines[i].match(global_expression_list_line);
-        if (matches == null)
-        {
+        if (matches == null) {
             // not already a list item; insert a dash and space before the first non-whitespace character
             matches = txtTrimmedLines[i].match(global_expression_initial_whitespace);
             txtTrimmedLines[i] = txtTrimmedLines[i].substr(0, matches[0].length) + "- " + txtTrimmedLines[i].substr(matches[0].length);
         }
-        else
-        {
+        else {
             // already a list item; convert initial character(s) to dash for consistency
             txtTrimmedLines[i] = txtTrimmedLines[i].replace(global_expression_list_line, "$1- $3$4$5");
         }
@@ -301,8 +468,7 @@ function ConvertToUnorderedList(txtTrimmed: string)
     return txtTrimmedLines.join("\n");
 }
 
-function ConvertToOrderedList(txtTrimmed: string, startingIndex: number = 0)
-{
+function ConvertToOrderedList(txtTrimmed: string, startingIndex: number = 0) {
     let txtTrimmedLines: string[] = ConvertToUnorderedList(txtTrimmed).split("\n");
     ConvertToOrderedSublist(txtTrimmedLines, 0);
     return txtTrimmedLines.join("\n");
@@ -310,8 +476,7 @@ function ConvertToOrderedList(txtTrimmed: string, startingIndex: number = 0)
 
 // returns the total number of processed items; used recursively to increment list processing position
 // assumes list bullets are "-", as returned by ConvertToUnorderedList
-function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: number)
-{
+function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: number) {
     let currentIndex: number = startingIndex;
     let currentIndent: number;
     let currentOrderNumber: number = 1;
@@ -326,31 +491,25 @@ function ConvertToOrderedSublist(txtTrimmedLines: string[], startingIndex: numbe
     currentOrderNumber++;
     itemsProcessed++;
     
-    if(currentIndex < txtTrimmedLines.length)
-    {
+    if(currentIndex < txtTrimmedLines.length) {
         matches = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line);
-        while(matches[1].length >= currentIndent && currentIndex < txtTrimmedLines.length)
-        {
-            if(matches[1].length == currentIndent)
-            {
+        while(matches[1].length >= currentIndent && currentIndex < txtTrimmedLines.length) {
+            if(matches[1].length == currentIndent) {
                 // sibling
                 txtTrimmedLines[currentIndex] = txtTrimmedLines[currentIndex].replace(global_expression_unordered_list_line, "$1" + currentOrderNumber.toString() + ". $3$4");
                 currentIndex++;
                 currentOrderNumber++;
                 itemsProcessed++;
-                if(currentIndex < txtTrimmedLines.length)
-                {
+                if(currentIndex < txtTrimmedLines.length) {
                     matches = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line);
                 }
             }
-            else
-            {
+            else {
                 // new child list
                 let subitemsProcessed: number = ConvertToOrderedSublist(txtTrimmedLines, currentIndex); 
                 currentIndex += subitemsProcessed;
                 itemsProcessed += subitemsProcessed;
-                if(currentIndex < txtTrimmedLines.length)
-                {
+                if(currentIndex < txtTrimmedLines.length) {
                     matches = txtTrimmedLines[currentIndex].match(global_expression_unordered_list_line);
                 }
             }
